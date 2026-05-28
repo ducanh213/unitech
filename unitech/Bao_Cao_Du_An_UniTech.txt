@@ -1,0 +1,74 @@
+# BÁO CÁO CHI TIẾT DỰ ÁN UNITECH (EDUCATION MANAGEMENT SYSTEM)
+
+## 1. TỔNG QUAN DỰ ÁN
+UniTech là một hệ thống quản lý giáo dục toàn diện dành cho các trường đại học hoặc trung tâm đào tạo, cho phép quản lý sinh viên, giảng viên, môn học, lớp học và điểm số.
+
+## 2. CÔNG NGHỆ SỬ DỤNG
+- **Backend:** Node.js, Express framework.
+- **Frontend:** React.js (với React Router, Axios).
+- **Cơ sở dữ liệu:** MongoDB (sử dụng Mongoose).
+- **Machine Learning (ML):** Python (xử lý dữ liệu và mô hình gợi ý).
+- **Ngôn ngữ chính:** JavaScript (JS/JSX) và Python.
+
+---
+
+## 3. CHI TIẾT BACKEND (Node.js - JavaScript)
+
+### A. Controllers (Xử lý Logic)
+- **authController.js:** Đăng ký, đăng nhập (JWT), quên mật khẩu, đặt lại mật khẩu.
+- **classController.js:** Quản lý lớp học, danh sách sinh viên trong lớp, và nhập điểm (Chuyên cần, Giữa kỳ, Cuối kỳ).
+- **courseController.js:** Quản lý danh mục môn học.
+- **studentController.js:** Quản lý hồ sơ cá nhân và thông tin sinh viên.
+- **teacherController.js:** Quản lý hồ sơ giảng viên.
+- **registrationController.js:** Xử lý đăng ký môn học của sinh viên.
+- **notificationController.js:** Quản lý thông báo hệ thống.
+
+### B. Models (Cấu trúc dữ liệu - MongoDB)
+- **User.js:** Tài khoản đăng nhập chung (email, password, role).
+- **Student.js / Teacher.js:** Thông tin chi tiết riêng cho từng vai trò.
+- **Class.js / Course.js / Major.js:** Thông tin lớp học, môn học và chuyên ngành.
+- **Registration.js:** Lưu trữ kết quả đăng ký môn học và ĐIỂM SỐ của sinh viên.
+- **Notification.js:** Lưu trữ các thông báo.
+
+### C. Middleware & Utils
+- **middleware/auth.js:** Bảo mật API, kiểm tra Token và phân quyền (Admin, Teacher, Student).
+- **utils/email.js:** Gửi email OTP.
+
+---
+
+## 4. CHI TIẾT FRONTEND (React.js - JavaScript/JSX)
+
+### A. Phân hệ Admin
+- Quản lý toàn bộ danh mục hệ thống qua các trang: StudentList, TeacherList, CourseList, ClassList, MajorList, PeriodList.
+- Dashboard tổng quan (Overview).
+
+### B. Phân hệ Giảng viên (Teacher)
+- **Dashboard:** Xem thông tin cá nhân.
+- **Classes:** Xem danh sách lớp đang dạy.
+- **ClassGrades:** Nhập điểm trực tiếp cho sinh viên trong lớp.
+- **Schedule:** Xem lịch dạy.
+
+### C. Phân hệ Sinh viên (Student)
+- **StudentHome:** Tin tức và thông báo.
+- **Register:** Tìm kiếm và đăng ký lớp học.
+- **Schedule:** Xem lịch học cá nhân.
+- **Grades:** Xem bảng điểm các môn đã học.
+
+---
+
+## 5. PHẦN TRÍ TUỆ NHÂN TẠO (ML - Python)
+- **main.py:** Xử lý các luồng dữ liệu thông minh.
+- **database.py:** Thao tác dữ liệu phục vụ mô hình.
+- **Mục tiêu:** Phân tích dữ liệu từ `UniTech.courses.csv` để đưa ra các gợi ý hoặc báo cáo học thuật.
+
+---
+
+## 6. QUY TRÌNH TÍNH ĐIỂM (Cốt lõi)
+Hệ thống sử dụng công thức tính điểm trung bình (Total Grade) trong `classController.js`:
+- Điểm chuyên cần: 10%
+- Điểm giữa kỳ: 30%
+- Điểm cuối kỳ: 60%
+- Kết quả được làm tròn đến 1 chữ số thập phân.
+
+---
+Báo cáo được tạo tự động bởi Antigravity AI Assistant.

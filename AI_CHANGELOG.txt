@@ -1,0 +1,46 @@
+--- TÀI LIỆU BÁO CÁO: HỆ SINH THÁI TRÍ TUỆ NHÂN TẠO (AI) THEO TỪNG VAI TRÒ ---
+
+Hệ thống quản lý đào tạo UniTech không chỉ là phần mềm lưu trữ dữ liệu thông thường mà còn tích hợp một Hệ sinh thái AI toàn diện, hỗ trợ trực tiếp cho cả 3 đối tượng người dùng: Admin, Giảng viên và Sinh viên.
+
+========================================================================
+1. VAI TRÒ: ADMIN (PHÒNG ĐÀO TẠO)
+========================================================================
+📌 Tính năng: Mô hình Machine Learning Dự báo Nhu cầu Mở lớp
+- Vấn đề: Đầu mỗi học kỳ, Phòng Đào tạo thường gặp khó khăn trong việc quyết định nên mở bao nhiêu lớp cho một môn học để không bị thừa (lãng phí tài nguyên) hoặc thiếu (sinh viên không đăng ký được).
+- Giải pháp AI: Hệ thống áp dụng thuật toán học máy Random Forest (Rừng ngẫu nhiên) để phân tích dữ liệu lớn.
+- Cách thức vận hành:
+  + AI thu thập 3 luồng dữ liệu chính: Số lượng sinh viên trượt môn này ở kỳ trước, Số lượng sinh viên vừa thi đỗ môn tiên quyết, và Tính chất của môn học (Đại cương hay Chuyên ngành).
+  + Mô hình AI sẽ đưa ra con số dự báo chính xác số lượng sinh viên có khả năng sẽ đăng ký môn học này trong kỳ tới, từ đó quy đổi ra số lượng Lớp học cần mở (VD: Dự báo 120 sinh viên -> Đề xuất mở 3 lớp).
+- Lợi ích: Tối ưu hóa nguồn lực giảng dạy và phòng ốc của nhà trường.
+
+========================================================================
+2. VAI TRÒ: GIẢNG VIÊN
+========================================================================
+📌 Tính năng 1: Cảnh báo sớm Rủi ro Trượt môn (Early Warning System)
+- Vấn đề: Giảng viên thường chỉ nhận ra sinh viên học kém khi đã thi xong Cuối kỳ, lúc này không còn cơ hội để cứu vãn.
+- Giải pháp AI: Phân tích rủi ro Real-time ngay trên bảng nhập điểm.
+- Cách thức vận hành:
+  + Ngay từ giữa học kỳ, khi giảng viên chốt điểm Chuyên cần và Giữa kỳ, AI sẽ chạy thuật toán phân tích trọng số.
+  + Nếu kết quả dự phóng điểm tổng kết cực thấp (< 4.0), hệ thống tự động gắn nhãn "🔴 Nguy cơ cao".
+  + Nếu kết quả mấp mé trượt (4.0 - 5.4), gắn nhãn "🟡 Cần chú ý". Ngược lại là "🟢 An toàn".
+- Lợi ích: Giúp giảng viên chủ động khoanh vùng nhóm sinh viên yếu kém ngay từ giữa học kỳ để nhắc nhở, phụ đạo.
+
+📌 Tính năng 2: Theo dõi Điểm Mục tiêu Cuối kỳ
+- Cách thức vận hành: Ngay dưới ô trống điểm Cuối kỳ của sinh viên, AI sẽ hiển thị gợi ý (VD: Mục tiêu: 4.5).
+- Lợi ích: Khi giảng viên nhìn vào bảng điểm, họ sẽ biết ngay sinh viên này đang cần thi bao nhiêu điểm để qua môn, từ đó dễ dàng nhắc nhở: "Em A chú ý nhé, cuối kỳ em phải cố được ít nhất 4.5 điểm!".
+
+========================================================================
+3. VAI TRÒ: SINH VIÊN
+========================================================================
+📌 Tính năng 1: Cố vấn Học tập Ảo (Gợi ý Lộ trình & Ưu tiên Học lại)
+- Vấn đề: Sinh viên hoang mang không biết kỳ tới nên học gì, đặc biệt khi lỡ trượt vài môn.
+- Giải pháp AI: Thuật toán Smart Filter kết hợp Cây lộ trình (Tech-tree).
+- Cách thức vận hành:
+  + AI quét lịch sử điểm. Nếu có môn nào trượt (< 4.0) mà chưa từng học lại, AI ép môn đó lên Top 1 (Bắt buộc đăng ký học lại).
+  + Sau đó, AI đối chiếu các môn đã thi đỗ với Cây tiến trình học thuật để đề xuất các môn học cấp độ cao hơn (VD: Đã qua Nhập môn lập trình -> Gợi ý Lập trình cơ bản).
+- Lợi ích: Đảm bảo sinh viên trả nợ môn kịp thời, tránh dồn ứ đến cuối năm cuối cấp, vẽ ra con đường học tập tối ưu.
+
+📌 Tính năng 2: Dự báo Điểm Mục tiêu (Target Prediction)
+- Vấn đề: Sinh viên luôn tự hỏi "Mình cần thi cuối kỳ mấy điểm để vừa đủ qua môn này?".
+- Cách thức vận hành: Tương tự như góc nhìn của giảng viên, khi sinh viên xem Bảng điểm cá nhân, hệ thống tự động tính toán phương trình đảo ngược để tìm ra số điểm Cuối kỳ tối thiểu cần đạt để tổng kết vừa đúng chạm mốc 4.0.
+- Lợi ích: Giúp sinh viên xác định được trọng tâm ôn thi (môn nào cần điểm cao để bù, môn nào chỉ cần điểm nhẹ nhàng).
