@@ -92,13 +92,20 @@ class PathRequest(BaseModel):
 
 @app.post("/recommend-path")
 async def recommend_path(data: PathRequest):
-    # Giả lập cây môn học (Tech-tree)
+    # Cây môn học (Tech-tree) dựa trên 21 môn thực tế (Trung tâm)
     tech_tree = {
-        "CS101": ["CS201", "IT001"],
-        "CS201": ["CS301", "IT204"],
-        "MA101": ["MA102"],
-        "IT001": ["IT002"],
-        "IT002": ["IT004"],
+        "WEB101": ["WEB102", "WEB201", "WEB202"],
+        "WEB102": ["WEB301"],
+        "WEB201": ["WEB301"],
+        "DS101": ["DS102", "DS202"],
+        "DS102": ["DS201"],
+        "DS201": ["DS301"],
+        "MOB101": ["MOB102"],
+        "MOB102": ["MOB201"],
+        "MOB201": ["MOB301"],
+        "DES101": ["DES102"],
+        "DES102": ["DES201"],
+        "DES201": ["DES301"]
     }
     
     passed = set(data.passed_courses)
@@ -116,10 +123,11 @@ async def recommend_path(data: PathRequest):
                 if next_c not in passed:
                     recommendations.add(next_c)
                     
-    # Nếu chưa có môn nào cần học (cả học lại và lộ trình), gợi ý môn đại cương
+    # Nếu chưa có môn nào cần học (cả học lại và lộ trình), gợi ý môn đại cương dùng chung cho tất cả các ngành
     if not recommendations:
-        if "CS101" not in passed and "CS101" not in failed: recommendations.add("CS101")
-        if "MA101" not in passed and "MA101" not in failed: recommendations.add("MA101")
+        if "ENG101" not in passed and "ENG101" not in failed: recommendations.add("ENG101")
+        if "PM101" not in passed and "PM101" not in failed: recommendations.add("PM101")
+        if "SOFT101" not in passed and "SOFT101" not in failed: recommendations.add("SOFT101")
             
     rec_list = list(recommendations)[:3] # Gợi ý tối đa 3 môn
     return {"status": "success", "recommendations": rec_list}

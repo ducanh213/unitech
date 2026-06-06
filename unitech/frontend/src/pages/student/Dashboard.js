@@ -1,12 +1,14 @@
 // src/pages/student/Dashboard.js
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { doLogout, getUserFromToken } from '../../utils/auth';
+import ChangePasswordModal from '../../components/ChangePasswordModal';
 import '../../App.css';
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
   const user = getUserFromToken();
+  const [showCPW, setShowCPW] = useState(false);
 
   const handleLogout = () => {
     if (window.confirm('Bạn có chắc muốn đăng xuất?')) {
@@ -37,11 +39,16 @@ export default function StudentDashboard() {
             <p className="dashboard-subtitle">Xin chào,</p>
             <h1 className="dashboard-heading">{user?.username || 'Sinh viên'}</h1>
           </div>
-          <button className="dashboard-logout" onClick={handleLogout}>Đăng xuất</button>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <button className="btn-change-password" onClick={() => setShowCPW(true)}>🔒 Đổi mật khẩu</button>
+            <button className="admin-logout" onClick={handleLogout}>Đăng xuất</button>
+          </div>
         </header>
 
         <Outlet />
       </main>
+
+      <ChangePasswordModal isOpen={showCPW} onClose={() => setShowCPW(false)} />
     </div>
   );
 }

@@ -1,11 +1,13 @@
 // src/pages/admin/Dashboard.js
-import React from 'react';
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { doLogout } from '../../utils/auth';
+import ChangePasswordModal from '../../components/ChangePasswordModal';
 import '../../App.css';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const [showCPW, setShowCPW] = useState(false);
 
   const handleLogout = () => {
     if (window.confirm('Bạn có chắc muốn đăng xuất?')) {
@@ -27,13 +29,14 @@ export default function AdminDashboard() {
         </div>
         <nav>
           <ul className="nav-list">
-            <li><Link to="">🏠 Trang Chủ</Link></li>
-            <li><Link to="students">👨‍🎓 Sinh viên</Link></li>
-            <li><Link to="teachers">👩‍🏫 Giảng viên</Link></li>
-            <li><Link to="majors">📚 Ngành học</Link></li>
-            <li><Link to="courses">📖 Học phần</Link></li>
-            <li><Link to="classes">🏫 Lớp học</Link></li>
-            <li><Link to="periods">⏱️ Đợt đăng ký</Link></li>
+            <li><NavLink to="" end className={({ isActive }) => isActive ? 'active' : ''}>🏠 Trang Chủ</NavLink></li>
+            <li><NavLink to="students" className={({ isActive }) => isActive ? 'active' : ''}>👨‍🎓 Sinh viên</NavLink></li>
+            <li><NavLink to="teachers" className={({ isActive }) => isActive ? 'active' : ''}>👩‍🏫 Giảng viên</NavLink></li>
+            <li><NavLink to="majors" className={({ isActive }) => isActive ? 'active' : ''}>📚 Ngành học</NavLink></li>
+            <li><NavLink to="courses" className={({ isActive }) => isActive ? 'active' : ''}>📖 Học phần</NavLink></li>
+            <li><NavLink to="classes" className={({ isActive }) => isActive ? 'active' : ''}>🏫 Lớp học</NavLink></li>
+            <li><NavLink to="periods" className={({ isActive }) => isActive ? 'active' : ''}>⏱️ Đợt đăng ký</NavLink></li>
+            <li><NavLink to="profile" className={({ isActive }) => isActive ? 'active' : ''}>👤 Tài khoản</NavLink></li>
           </ul>
         </nav>
       </aside>
@@ -48,12 +51,18 @@ export default function AdminDashboard() {
               Xem tổng quan, quản lý sinh viên, giảng viên và các dữ liệu quan trọng.
             </p>
           </div>
-          <button className="admin-logout" onClick={handleLogout}>Đăng xuất</button>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <button className="btn-change-password" onClick={() => setShowCPW(true)}>🔒 Đổi mật khẩu</button>
+            <button className="admin-logout" onClick={handleLogout}>Đăng xuất</button>
+          </div>
         </div>
 
         {/* Outlet for nested routes */}
         <Outlet />
       </main>
+
+      <ChangePasswordModal isOpen={showCPW} onClose={() => setShowCPW(false)} />
     </div>
   );
 }
+

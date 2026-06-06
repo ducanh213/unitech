@@ -3,12 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { getUserFromToken, doLogout } from '../../utils/auth';
 import { getTeacherMe } from '../../api/axios';
+import ChangePasswordModal from '../../components/ChangePasswordModal';
 import '../../App.css';
 
 export default function TeacherDashboard() {
   const user = getUserFromToken();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
+  const [showCPW, setShowCPW] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -81,7 +83,10 @@ export default function TeacherDashboard() {
                   <p>{profile?.user?.email || user?.email || 'Không có email'}</p>
                 </div>
               </div>
-              <button className="dashboard-logout" onClick={handleLogout}>Đăng xuất</button>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <button className="btn-change-password" onClick={() => setShowCPW(true)}>🔒 Đổi mật khẩu</button>
+                <button className="admin-logout" onClick={handleLogout}>Đăng xuất</button>
+              </div>
             </div>
 
             <div className="profile-details">
@@ -103,6 +108,8 @@ export default function TeacherDashboard() {
 
         <Outlet />
       </main>
+
+      <ChangePasswordModal isOpen={showCPW} onClose={() => setShowCPW(false)} />
     </div>
   );
 }

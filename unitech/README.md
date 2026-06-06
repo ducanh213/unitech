@@ -28,7 +28,7 @@ npm start
 
 ## 🔐 Thông tin Đăng nhập (Tài khoản mẫu)
 
-Dữ liệu hệ thống đã được tự động tạo (seed) bao gồm **1 Quản trị viên**, **10 Giảng viên**, và **30 Sinh viên** (với rất nhiều dữ liệu lớp học, điểm số). Dưới đây là thông tin đăng nhập:
+Dữ liệu hệ thống đã được tự động tạo (seed) bao gồm **1 Quản trị viên**, **10 Giảng viên**, và **150 Sinh viên** (với rất nhiều dữ liệu lớp học, điểm số). Dưới đây là thông tin đăng nhập:
 
 ### 👑 Quản trị viên (Admin)
 - **Số lượng:** 1 tài khoản
@@ -46,12 +46,13 @@ Dữ liệu hệ thống đã được tự động tạo (seed) bao gồm **1 Q
 - **Chức năng chính:** Xem thông tin cá nhân, danh sách lớp học được phân công và thời khóa biểu.
 
 ### 🎓 Sinh viên (Student)
-- **Số lượng:** 50 tài khoản
-- **Email:** `student1@gmail.com` đến `student50@gmail.com`
+- **Số lượng:** 150 tài khoản
+- **Email:** `student1@gmail.com` đến `student150@gmail.com`
 - **Mật khẩu chung:** `123456`
 - **Ví dụ tài khoản cụ thể:**
   - Email: `student1@gmail.com` / Pass: `123456`
-  - Email: `student25@gmail.com` / Pass: `123456`
+  - Email: `student75@gmail.com` / Pass: `123456`
+  - Email: `student150@gmail.com` / Pass: `123456`
 - **Chức năng chính:** Đăng ký học phần, xem thời khóa biểu, xem điểm số và thông tin cá nhân.
 
 ---
@@ -76,15 +77,15 @@ cd ML
 .\venv\Scripts\activate
 ```
 
-### Bước 3: Khởi động Server AI
-Cài đặt thư viện (nếu chưa cài):
+### Bước 3: Cài đặt thư viện và Khởi động Server AI
+Cài đặt thư viện (nâng cấp pip trước và dùng `--prefer-binary` để tránh lỗi biên dịch):
 ```bash
-pip install -r requirements.txt
+python.exe -m pip install --upgrade pip
+pip install --prefer-binary -r requirements.txt
 ```
-Chạy file main:
+Chạy file main để khởi động server AI:
 ```bash
-uvicorn main:app --port 8080 --reload
+python main.py
 ```
-*(Hoặc chạy lệnh `python main.py` tùy theo cấu hình file của bạn)*
 
 Sau khi Server Python chạy thành công ở cổng `8080`, bạn có thể vào trang **Admin Dashboard -> Quản lý Học phần** và bấm nút **🤖 Dự báo AI** để xem kết quả phân tích.

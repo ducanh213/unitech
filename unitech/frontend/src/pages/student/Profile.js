@@ -1,42 +1,31 @@
 // src/pages/student/Profile.js
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';              // <-- thêm useNavigate
-import { getStudentMe, updateStudent } from '../../api/axios';
-import { doLogout } from '../../utils/auth';
-import './Profile.css';                                       // <-- đảm bảo file tồn tại
+import { getStudentMe, updateStudent, updateMyProfile } from '../../api/axios';
+import './Profile.css';
 
 export default function Profile() {
-  const navigate = useNavigate();
-
-  const [form, setForm] = useState({
-    studentId: '',
-    fullName: '',
-    email: '',
-    phone: '',
-    address: ''
-  });
+  const [form, setForm] = useState({ studentId: '', fullName: '', email: '', phone: '', address: '' });
   const [loading, setLoading] = useState(true);
-  const [error, setError]       = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
+  const [stuId, setStuId] = useState(null);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     async function fetchProfile() {
       try {
         const res = await getStudentMe();
         const stu = res.data;
+        setStuId(stu._id);
         setForm({
           studentId: stu.studentId,
-          fullName:  stu.fullName,
-          email:     stu.user.email,
-          phone:     stu.phone || '',
-          address:   stu.address || ''
+          fullName: stu.fullName,
+          email: stu.user?.email || '',
+          phone: stu.phone || '',
+          address: stu.address || ''
         });
       } catch (err) {
-        if (err.response?.status === 404) {
-          setError('Không tìm thấy hồ sơ sinh viên. Vui lòng liên hệ Admin.');
-        } else {
-          setError('Không thể tải hồ sơ');
-        }
+        if (err.response?.status === 404) setError('Không tìm thấy hồ sơ sinh viên.');
+        else setError('Không thể tải hồ sơ');
       } finally {
         setLoading(false);
       }
@@ -47,58 +36,51 @@ export default function Profile() {
   const handleChange = e => {
     const { name, value } = e.target;
     setForm(f => ({ ...f, [name]: value }));
-    setError(''); 
-    setSuccessMsg('');
+    setError(''); setSuccess('');
   };
 
   const handleSubmit = async e => {
     e.preventDefault();
     try {
-      const me = await getStudentMe();
-      await updateStudent(me.data._id, {
-        fullName: form.fullName,
-        phone:    form.phone,
-        address:  form.address
-      });
-      setSuccessMsg('Cập nhật hồ sơ thành công');
+      await updateStudent(stuId, { fullName: form.fullName, phone: form.phone, address: form.address });
+      await updateMyProfile({ username: form.fullName });
+      setSuccess('Cập nhật hồ sơ thành công!');
     } catch (err) {
       setError(err.response?.data?.msg || 'Lỗi khi lưu hồ sơ');
     }
   };
 
-  if (loading) return <p>Đang tải hồ sơ…</p>;
+  if (loading) return <p style={{ textAlign: 'center', marginTop: '2rem' }}>Đang tải hồ sơ…</p>;
 
   return (
     <div className="profile-container">
-     
-
-      <h2>Hồ sơ cá nhân</h2>
+      <h2>👤 Hồ sơ cá nhân</h2>
 
       {error && <p className="error">{error}</p>}
-      {successMsg && <p className="success">{successMsg}</p>}
+      {success && <p className="success">{success}</p>}
 
       <form onSubmit={handleSubmit}>
         <div>
-          <label>Mã sinh viên:</label>
+          <label>Mã sinh viên 🔒</label>
           <input name="studentId" value={form.studentId} disabled />
         </div>
         <div>
-          <label>Họ tên:</label>
+          <label>Họ tên ✏️</label>
           <input name="fullName" value={form.fullName} onChange={handleChange} required />
         </div>
         <div>
-          <label>Email:</label>
+          <label>Email 🔒</label>
           <input name="email" type="email" value={form.email} disabled />
         </div>
         <div>
-          <label>Phone:</label>
-          <input name="phone" value={form.phone} onChange={handleChange} />
+          <label>Số điện thoại ✏️</label>
+          <input name="phone" value={form.phone} onChange={handleChange} placeholder="Nhập số điện thoại" />
         </div>
         <div>
-          <label>Địa chỉ:</label>
-          <input name="address" value={form.address} onChange={handleChange} />
+          <label>Địa chỉ ✏️</label>
+          <input name="address" value={form.address} onChange={handleChange} placeholder="Nhập địa chỉ" />
         </div>
-        <button type="submit">Lưu thay đổi</button>
+        <button type="submit">💾 Lưu thay đổi</button>
       </form>
     </div>
   );

@@ -69,7 +69,7 @@ export default function Grades() {
     if (score >= 7.0) return 'Khá';
     if (score >= 5.5) return 'TB';
     if (score >= 4.0) return 'Qua môn';
-    return 'Yếu';
+    return 'Trượt';
   };
 
   if (loading) return (

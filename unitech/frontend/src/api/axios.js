@@ -23,6 +23,8 @@ export const login = (data) => instance.post("/auth/login", data);
 export const register = (data) => instance.post("/auth/register", data);
 export const forgotPassword = (data) => instance.post("/auth/forgot", data);
 export const resetPassword = (data) => instance.post("/auth/reset", data);
+export const updateMyProfile = (data) => instance.put("/auth/me", data);
+export const changePassword = (data) => instance.put("/auth/me/password", data);
 
 // === Students ===
 export const getStudents = () => instance.get("/students");

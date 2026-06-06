@@ -14,6 +14,7 @@ import ResetPassword    from './pages/Auth/ResetPassword';
 // Admin
 import AdminDashboard   from './pages/admin/Dashboard';
 import Overview         from './pages/admin/Overview';
+import AdminProfile     from './pages/admin/AdminProfile';
 import StudentList      from './pages/admin/StudentList';
 import StudentForm      from './pages/admin/StudentForm';
 import TeacherList      from './pages/admin/TeacherList';
@@ -87,6 +88,7 @@ function App() {
           <Route path="periods"       element={<PeriodList   />} />
           <Route path="periods/new"   element={<PeriodForm   />} />
           <Route path="periods/:id/edit" element={<PeriodForm />} />
+          <Route path="profile"       element={<AdminProfile />} />
         </Route>
 
         {/* STUDENT */}

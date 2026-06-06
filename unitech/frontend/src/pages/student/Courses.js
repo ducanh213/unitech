@@ -64,7 +64,7 @@ export default function Courses() {
         <thead>
           <tr>
             <th>Mã HP</th><th>Tên học phần</th><th>TC</th>
-            <th>Đại cương</th><th>Áp dụng chuyên ngành</th>
+            <th>Phân loại</th><th>Áp dụng chuyên ngành</th>
             <th>Kỳ</th><th>Hành động</th>
           </tr>
         </thead>
@@ -76,7 +76,7 @@ export default function Courses() {
                 <td>{course.code}</td>
                 <td>{course.title}</td>
                 <td>{course.credits}</td>
-                <td>{course.isGeneral ? '✔' : ''}</td>
+                <td><span style={{ padding: '4px 8px', borderRadius: '4px', backgroundColor: course.isGeneral ? '#e0f2fe' : '#fef3c7', color: course.isGeneral ? '#0369a1' : '#b45309', fontWeight: 'bold', fontSize: '0.85em' }}>{course.isGeneral ? 'Đại cương' : 'Chuyên ngành'}</span></td>
                 <td>
                   {course.majors.map(m=>m.code).join(', ')}
                 </td>

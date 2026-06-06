@@ -145,7 +145,7 @@ exports.update = async (req, res, next) => {
     }
 
     // Update allowed fields in Teacher
-    ['fullName','teacherId','department','degree','qualifiedSubjects'].forEach(key => {
+    ['fullName','teacherId','department','degree','qualifiedSubjects', 'phone'].forEach(key => {
       if (req.body[key] !== undefined) {
         teacher[key] = req.body[key];
       }

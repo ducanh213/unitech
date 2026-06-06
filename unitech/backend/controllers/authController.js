@@ -92,3 +92,46 @@ exports.reset = async (req, res, next) => {
     next(err);
   }
 };
+
+// PUT /api/auth/me  – cập nhật username (dùng chung 3 role)
+exports.updateMe = async (req, res, next) => {
+  try {
+    const { username } = req.body;
+    if (!username || !username.trim()) {
+      return res.status(400).json({ msg: 'Tên hiển thị không được để trống' });
+    }
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: 'Không tìm thấy tài khoản' });
+    
+    user.username = username.trim();
+    await user.save();
+    
+    res.json({ msg: 'Cập nhật thông tin thành công', user: { username: user.username, email: user.email, role: user.role } });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// PUT /api/auth/me/password  – đổi mật khẩu có xác thực mật khẩu cũ (dùng chung 3 role)
+exports.changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ msg: 'Vui lòng nhập đầy đủ mật khẩu cũ và mật khẩu mới' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ msg: 'Mật khẩu mới phải có ít nhất 6 ký tự' });
+    }
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: 'Không tìm thấy tài khoản' });
+
+    const match = await bcrypt.compare(currentPassword, user.password);
+    if (!match) return res.status(400).json({ msg: 'Mật khẩu hiện tại không đúng' });
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    res.json({ msg: 'Đổi mật khẩu thành công' });
+  } catch (err) {
+    next(err);
+  }
+};

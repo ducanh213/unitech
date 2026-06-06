@@ -96,9 +96,9 @@ export default function CourseList() {
           <tr>
             <th>Code</th><th>Tiêu đề</th><th>Tín chỉ</th>
             <th>Th.uyết</th><th>Bài tập</th><th>Học kỳ</th>
-            <th>Đại cương?</th>
-            <th>Áp dụng cho Majors</th>
-            <th>Prerequisites</th>
+            <th>Phân loại</th>
+            <th>Áp dụng cho ngành</th>
+            <th>Điều kiện tiên quyết</th>
             <th>Hành động</th>
           </tr>
         </thead>
@@ -111,7 +111,7 @@ export default function CourseList() {
               <td>{c.theoryHours}</td>
               <td>{c.practiceHours}</td>
               <td>{c.semesterOffered || '—'}</td>
-              <td style={{ textAlign: 'center' }}>{c.isGeneral ? '✔︎' : '—'}</td>
+              <td><span style={{ padding: '4px 8px', borderRadius: '4px', backgroundColor: c.isGeneral ? '#e0f2fe' : '#fef3c7', color: c.isGeneral ? '#0369a1' : '#b45309', fontWeight: 'bold', fontSize: '0.85em' }}>{c.isGeneral ? 'Đại cương' : 'Chuyên ngành'}</span></td>
               <td>
                 {Array.isArray(c.majors) && c.majors.length > 0 ? (
                   c.majors.map(m => m.name || m.code || m).join(', ')
