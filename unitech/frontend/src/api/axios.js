@@ -89,3 +89,6 @@ export const updatePeriod = (id, data) => instance.put(`/periods/${id}`, data);
 export const openPeriod = (id) => instance.patch(`/periods/${id}/open`);
 export const closePeriod = (id) => instance.patch(`/periods/${id}/close`);
 export const deletePeriod = (id) => instance.delete(`/periods/${id}`);
+
+// === Reports (Admin AI) ===
+export const getAcademicReport = () => instance.get('/reports/academic');

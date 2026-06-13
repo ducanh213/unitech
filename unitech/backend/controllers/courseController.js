@@ -27,57 +27,7 @@ exports.getAll = async (req, res, next) => {
   }
 };
 
-//DD 
-exports.getAIRecommendation = async (req, res) => {
-    try {
-        const course = await Course.findById(req.params.id);
-        if (!course) return res.status(404).json({ message: "Môn học không tồn tại" });
 
-
-        // LẤY DỮ LIỆU THỰC TẾ TỪ DATABASE THAY VÌ RANDOM
-        const ClassModel = require('../models/Class');
-        const Registration = require('../models/Registration');
-        const Student = require('../models/Student');
-
-        // Lấy tất cả các lớp của môn học này
-        const classesOfCourse = await ClassModel.find({ course: course._id }).select('_id');
-        const classIds = classesOfCourse.map(c => c._id);
-
-        // 1. Số sinh viên đã từng học và trượt (totalGrade < 4)
-        const failed_students = await Registration.countDocuments({
-            class: { $in: classIds },
-            totalGrade: { $lt: 4, $ne: null }
-        });
-
-        // 2. Số sinh viên đã học và qua môn
-        const passed_students = await Registration.countDocuments({
-            class: { $in: classIds },
-            totalGrade: { $gte: 4 }
-        });
-
-        // 3. Số sinh viên đủ điều kiện học (Tổng sinh viên toàn trường - số người đã qua môn)
-        const totalStudents = await Student.countDocuments({ isDeleted: false });
-        const passed_prerequisite = totalStudents - passed_students;
-
-        const realData = {
-            failed_students: failed_students,
-            passed_prerequisite: passed_prerequisite,
-            is_core_course: course.isGeneral ? 1 : 0
-        };
-
-        // Gọi sang Server Python
-        const response = await axios.post('http://127.0.0.1:8080/predict-demand', {
-            course_id: course.code,
-            course_name: course.title,
-            ...realData
-        });
-
-        res.json(response.data);
-    } catch (error) {
-        console.error("Lỗi AI Service:", error.message);
-        res.status(500).json({ message: "Server AI chưa khởi động hoặc có lỗi." });
-    }
-};
 /**
  * GET /api/courses/:id
  */

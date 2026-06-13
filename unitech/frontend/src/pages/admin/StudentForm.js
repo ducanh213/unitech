@@ -20,6 +20,7 @@ export default function StudentForm() {
 
   useEffect(() => {
     if (isEdit) loadStudent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadStudent = async () => {

@@ -30,9 +30,6 @@ const auth    = require('../middleware/auth');
 const role    = require('../middleware/role');
 const ctrl    = require('../controllers/courseController');
 
-router.get('/:id/ai-predict', auth, role('admin'), ctrl.getAIRecommendation);
-
-
 // List all → admin, teacher, student
 router.get('/',    auth, role('admin','teacher','student'), ctrl.getAll);
 router.get('/:id', auth, role('admin','teacher','student'), ctrl.getById);

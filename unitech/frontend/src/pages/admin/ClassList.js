@@ -52,20 +52,25 @@ export default function ClassList() {
           </tr>
         </thead>
         <tbody>
-          {classes.map(cls => (
+          {classes.map(cls => {
+            const suffix = cls.classCode.includes('-') ? cls.classCode.split('-').pop() : '';
+            const sufCode = suffix ? `.${suffix}` : '';
+            const sufTitle = suffix ? ` .${suffix}` : '';
+            return (
             <tr key={cls._id}>
               <td>{cls.classCode}</td>
-              <td>{cls.course?.code} - {cls.course?.title}</td>
+              <td>{cls.course?.code}{sufCode} - {cls.course?.title}{sufTitle}</td>
               <td>{cls.teacher?.teacherId} - {cls.teacher?.fullName}</td>
               <td>{cls.room}</td>
               <td>{cls.schedule}</td>
-              <td>{cls.capacityMin} / {cls.capacityMax}</td>
+              <td>{cls.currentEnrollment || 0} / {cls.capacityMax}</td>
               <td>
                 <button onClick={() => navigate(`${cls._id}/edit`)}>Sửa</button>{' '}
                 <button onClick={() => handleDelete(cls._id)}>Xóa</button>
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>

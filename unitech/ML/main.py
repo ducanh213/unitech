@@ -16,42 +16,7 @@ app.add_middleware(
 )
 
 
-try:
-    model = joblib.load("models/random_forest_edu.pkl")
-    print("[SUCCESS] Da tai mo hinh Random Forest thanh cong!")
-except:
-    print("[ERROR] Khong tim thay file models/random_forest_edu.pkl. Hay chay script huan luyen truoc.")
 
-# Cấu trúc dữ liệu yêu cầu từ NodeJS gửi sang
-class PredictionRequest(BaseModel):
-    course_id: str
-    course_name: str
-    failed_students: int
-    passed_prerequisite: int
-    is_core_course: int 
-
-@app.post("/predict-demand")
-async def predict(data: PredictionRequest):
-
-    input_data = pd.DataFrame([[
-        data.failed_students, 
-        data.passed_prerequisite, 
-        data.is_core_course
-    ]], columns=['failed_students', 'passed_prereq', 'is_general'])
-    
-
-    prediction = model.predict(input_data)[0]
-    predicted_count = int(round(prediction))
-    
-
-    suggested_classes = (predicted_count // 40) + (1 if predicted_count % 40 > 0 else 0)
-    
-    return {
-        "course_name": data.course_name,
-        "predicted_students": predicted_count,
-        "suggested_classes": suggested_classes,
-        "status": "success"
-    }
 
 # ----- FEATURE 1: DỰ BÁO RỦI RO TRƯỢT MÔN -----
 from typing import List, Optional
@@ -60,6 +25,7 @@ class StudentGrades(BaseModel):
     student_id: str
     attendance: Optional[float] = None
     midterm: Optional[float] = None
+    final: Optional[float] = None
 
 class RiskRequest(BaseModel):
     students: List[StudentGrades]
@@ -70,11 +36,21 @@ async def predict_risk(data: RiskRequest):
     for s in data.students:
         att = s.attendance if s.attendance is not None else 0
         mid = s.midterm if s.midterm is not None else 0
+        fin = s.final if s.final is not None else 0
         
-        if s.attendance is None and s.midterm is None:
+        if s.attendance is None and s.midterm is None and s.final is None:
             risk = "Chưa có điểm"
+        elif s.final is not None:
+            # Đã thi cuối kỳ -> Tính điểm tổng kết chính xác
+            score = att * 0.1 + mid * 0.3 + fin * 0.6
+            if score < 4.0:
+                risk = "🔴 Rớt môn"
+            elif score < 5.5:
+                risk = "🟡 Cần chú ý"
+            else:
+                risk = "🟢 An toàn"
         else:
-            # Mô hình dựa trên luật (Heuristic) demo
+            # Chưa thi cuối kỳ -> Dự báo rủi ro dựa trên chuyên cần và giữa kỳ
             score = att * 0.3 + mid * 0.7
             if score < 4.0:
                 risk = "🔴 Nguy cơ cao"

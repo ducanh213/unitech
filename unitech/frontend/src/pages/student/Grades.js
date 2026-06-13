@@ -7,6 +7,7 @@ export default function Grades() {
   const [grades, setGrades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedSemester, setSelectedSemester] = useState('all');
   
   // AI Path States
   const [recommendations, setRecommendations] = useState([]);
@@ -47,11 +48,24 @@ export default function Grades() {
     }
   };
 
-  // Tính GPA (trung bình các môn đã có điểm tổng kết)
+  // Tính GPA (trung bình các môn đã có điểm tổng kết, không tính kỳ hiện tại)
   const gradedCourses = grades.filter(r => r.totalGrade !== null);
   const gpa = gradedCourses.length > 0
     ? (gradedCourses.reduce((sum, r) => sum + r.totalGrade, 0) / gradedCourses.length).toFixed(2)
     : null;
+
+  // Phân nhóm theo kỳ
+  const semesterGroups = {};
+  grades.forEach(r => {
+    const key = r.period?.semester || r.period?.name || 'Khác';
+    const label = r.period?.name || key;
+    if (!semesterGroups[key]) semesterGroups[key] = { label, regs: [], status: r.period?.status };
+    semesterGroups[key].regs.push(r);
+  });
+  const semesterKeys = Object.keys(semesterGroups);
+  const displayedGrades = selectedSemester === 'all'
+    ? grades
+    : (semesterGroups[selectedSemester]?.regs || []);
 
   // Màu điểm
   const getGradeColor = (score) => {
@@ -89,7 +103,7 @@ export default function Grades() {
       {/* Thẻ thống kê tóm tắt */}
       <div className="teacher-summary-cards" style={{ marginBottom: '28px' }}>
         <div className="summary-card">
-          <p>Tổng số môn đăng ký</p>
+          <p>Tổng môn (tất cả kỳ)</p>
           <h3>{grades.length}</h3>
         </div>
         <div className="summary-card">
@@ -145,16 +159,40 @@ export default function Grades() {
 
       {/* Bảng điểm */}
       <div className="main-content-card">
-        <h2 style={{ marginTop: 0, marginBottom: '20px' }}>Bảng điểm chi tiết</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+          <h2 style={{ margin: 0 }}>📖 Lịch sử học tập & Điểm số</h2>
+          {/* Tabs theo kỳ học */}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setSelectedSemester('all')}
+              style={{ padding: '5px 12px', borderRadius: 20, border: '1px solid #d1d5db', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600, background: selectedSemester === 'all' ? '#2563eb' : '#f8fafc', color: selectedSemester === 'all' ? '#fff' : '#374151' }}
+            >Tất cả ({grades.length})</button>
+            {semesterKeys.map(key => {
+              const sg = semesterGroups[key];
+              const isOpen = sg.status === 'open';
+              return (
+                <button
+                  key={key}
+                  onClick={() => setSelectedSemester(key)}
+                  style={{ padding: '5px 12px', borderRadius: 20, border: `1px solid ${isOpen ? '#86efac' : '#d1d5db'}`, cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600, background: selectedSemester === key ? (isOpen ? '#16a34a' : '#2563eb') : (isOpen ? '#dcfce7' : '#f8fafc'), color: selectedSemester === key ? '#fff' : (isOpen ? '#15803d' : '#374151') }}
+                >{isOpen ? '🟢 ' : ''}{sg.label} ({sg.regs.length})</button>
+              );
+            })}
+          </div>
+        </div>
 
-        {grades.length === 0 ? (
+        {displayedGrades.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 0', color: '#94a3b8' }}>
             <p style={{ fontSize: '2.5rem', margin: '0 0 12px' }}>📋</p>
             <p style={{ fontSize: '1rem' }}>Bạn chưa đăng ký môn học nào.</p>
           </div>
         ) : (
           <div className="table-scroll">
-            <table>
+            <p style={{ color: '#64748b', fontSize: '0.82rem', marginBottom: 12 }}>
+              Hiển thị <strong>{displayedGrades.length}</strong> môn học
+              {selectedSemester !== 'all' && ` · ${semesterGroups[selectedSemester]?.label}`}
+            </p>
+            <table style={{ opacity: 1 }}>
               <thead>
                 <tr>
                   <th>Mã lớp</th>
@@ -168,7 +206,7 @@ export default function Grades() {
                 </tr>
               </thead>
               <tbody>
-                {grades.map((reg) => {
+                {displayedGrades.map((reg) => {
                   const total = reg.totalGrade;
                   return (
                     <tr key={reg._id}>

@@ -18,14 +18,46 @@ exports.getAll = async (req, res, next) => {
         return res.status(404).json({ msg: 'Không tìm thấy giảng viên' });
       }
       filter.teacher = prof._id;
+    } else if (req.user.role === 'student') {
+      const Student = require('../models/Student');
+      const Major = require('../models/Major');
+      
+      const stu = await Student.findOne({ user: req.user.id });
+      if (stu && stu.major) {
+        const majorDoc = await Major.findOne({ code: stu.major });
+        if (majorDoc) {
+          const courses = await Course.find({
+            $or: [
+              { isGeneral: true },
+              { majors: majorDoc._id }
+            ]
+          }).select('_id');
+          
+          filter.course = { $in: courses.map(c => c._id) };
+        }
+      }
     }
 
     // Query với filter vừa tạo
     const list = await ClassModel.find(filter)
-      .populate('course', 'code title')
+      .populate({
+        path: 'course',
+        select: 'code title credits prerequisites',
+        populate: { path: 'prerequisites', select: 'code title' }
+      })
       .populate('teacher', 'teacherId fullName');
 
-    res.json(list);
+    // Gắn thêm currentEnrollment (số SV đã đăng ký) cho mỗi lớp
+    const listWithEnrollment = await Promise.all(
+      list.map(async cls => {
+        const count = await Registration.countDocuments({ class: cls._id });
+        const obj = cls.toObject();
+        obj.currentEnrollment = count;
+        return obj;
+      })
+    );
+
+    res.json(listWithEnrollment);
   } catch (err) {
     next(err);
   }
@@ -166,10 +198,13 @@ exports.remove = async (req, res, next) => {
 /**
  * GET /api/classes/:id/students
  * Lấy danh sách sinh viên trong một lớp (Dành cho giảng viên / admin)
+ * → Chỉ lấy sinh viên thuộc KỲ ĐANG CHẤM ĐIỂM (kỳ gần nhất đã kết thúc, không phải kỳ đang mở)
  */
 exports.getClassStudents = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const Period = require('../models/Period');
+
     const cls = await ClassModel.findById(id);
     if (!cls) return res.status(404).json({ msg: 'Không tìm thấy lớp' });
 
@@ -181,7 +216,25 @@ exports.getClassStudents = async (req, res, next) => {
       }
     }
 
-    const regs = await Registration.find({ class: id })
+    // Tìm kỳ đang mở để loại trừ
+    const openPeriod = await Period.findOne({ status: 'open' });
+    const excludeId  = openPeriod?._id;
+
+    // Tìm kỳ gần nhất mà LỚP NÀY cụ thể có sinh viên đăng ký (không phải kỳ đang mở)
+    const periodsWithRegs = await Registration.distinct('period', {
+      class: id,
+      ...(excludeId ? { period: { $ne: excludeId } } : {}),
+    });
+
+    const gradingPeriod = periodsWithRegs.length
+      ? await Period.findOne({ _id: { $in: periodsWithRegs } }).sort({ endDate: -1 })
+      : null;
+
+    // Lọc registration theo kỳ gần nhất của lớp này
+    const periodFilter = gradingPeriod
+      ? { class: id, period: gradingPeriod._id }
+      : { class: id };
+    const regs = await Registration.find(periodFilter)
       .populate('student', 'studentId fullName');
 
     res.json(regs);
@@ -209,7 +262,24 @@ exports.updateStudentGrades = async (req, res, next) => {
       }
     }
 
-    const reg = await Registration.findOne({ class: id, student: studentId });
+    const Period = require('../models/Period');
+    const openPeriod = await Period.findOne({ status: 'open' });
+    const excludeId  = openPeriod?._id;
+
+    const periodsWithRegs = await Registration.distinct('period', {
+      class: id,
+      ...(excludeId ? { period: { $ne: excludeId } } : {}),
+    });
+
+    const gradingPeriod = periodsWithRegs.length
+      ? await Period.findOne({ _id: { $in: periodsWithRegs } }).sort({ endDate: -1 })
+      : null;
+
+    const periodFilter = gradingPeriod
+      ? { class: id, student: studentId, period: gradingPeriod._id }
+      : { class: id, student: studentId };
+
+    const reg = await Registration.findOne(periodFilter);
     if (!reg) return res.status(404).json({ msg: 'Sinh viên chưa đăng ký lớp này' });
 
     if (attendanceGrade !== undefined) reg.attendanceGrade = attendanceGrade;
@@ -220,6 +290,8 @@ exports.updateStudentGrades = async (req, res, next) => {
     if (reg.attendanceGrade !== null && reg.midtermGrade !== null && reg.finalGrade !== null) {
       reg.totalGrade = (reg.attendanceGrade * 0.1) + (reg.midtermGrade * 0.3) + (reg.finalGrade * 0.6);
       reg.totalGrade = Math.round(reg.totalGrade * 10) / 10; // Làm tròn 1 chữ số thập phân
+    } else {
+      reg.totalGrade = null;
     }
 
     await reg.save();
@@ -247,17 +319,36 @@ exports.getAIRisk = async (req, res, next) => {
       }
     }
 
+    // Tương tự logic lấy danh sách sinh viên: Lọc đúng kỳ đang chấm điểm
+    const Period = require('../models/Period');
+    const openPeriod = await Period.findOne({ status: 'open' });
+    const excludeId  = openPeriod?._id;
+
+    const periodsWithRegs = await Registration.distinct('period', {
+      class: id,
+      ...(excludeId ? { period: { $ne: excludeId } } : {}),
+    });
+
+    const gradingPeriod = periodsWithRegs.length
+      ? await Period.findOne({ _id: { $in: periodsWithRegs } }).sort({ endDate: -1 })
+      : null;
+
+    const periodFilter = gradingPeriod
+      ? { class: id, period: gradingPeriod._id }
+      : { class: id };
+
     // Lấy toàn bộ điểm của sinh viên trong lớp
-    const regs = await Registration.find({ class: id });
+    const regs = await Registration.find(periodFilter);
     if (!regs || regs.length === 0) {
       return res.json({ status: 'success', predictions: [] });
     }
 
-    // Đóng gói payload gửi cho Python
+    // Đóng gói payload gửi cho Python (bổ sung finalGrade)
     const studentsPayload = regs.map(r => ({
       student_id: r.student.toString(),
       attendance: r.attendanceGrade,
-      midterm: r.midtermGrade
+      midterm: r.midtermGrade,
+      final: r.finalGrade
     }));
 
     const axios = require('axios');

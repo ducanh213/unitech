@@ -1,18 +1,16 @@
 // src/pages/admin/Dashboard.js
 import React, { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet } from 'react-router-dom';
 import { doLogout } from '../../utils/auth';
 import ChangePasswordModal from '../../components/ChangePasswordModal';
 import '../../App.css';
 
 export default function AdminDashboard() {
-  const navigate = useNavigate();
   const [showCPW, setShowCPW] = useState(false);
 
   const handleLogout = () => {
     if (window.confirm('Bạn có chắc muốn đăng xuất?')) {
-      doLogout();
-      navigate('/login', { replace: true });
+      doLogout(); // doLogout đã tự redirect về /login
     }
   };
 
@@ -36,6 +34,7 @@ export default function AdminDashboard() {
             <li><NavLink to="courses" className={({ isActive }) => isActive ? 'active' : ''}>📖 Học phần</NavLink></li>
             <li><NavLink to="classes" className={({ isActive }) => isActive ? 'active' : ''}>🏫 Lớp học</NavLink></li>
             <li><NavLink to="periods" className={({ isActive }) => isActive ? 'active' : ''}>⏱️ Đợt đăng ký</NavLink></li>
+            <li><NavLink to="report"  className={({ isActive }) => isActive ? 'active' : ''}>📊 Báo cáo AI</NavLink></li>
             <li><NavLink to="profile" className={({ isActive }) => isActive ? 'active' : ''}>👤 Tài khoản</NavLink></li>
           </ul>
         </nav>

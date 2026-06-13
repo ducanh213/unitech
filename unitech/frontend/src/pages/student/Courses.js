@@ -1,99 +1,113 @@
 // src/pages/student/Courses.js
+// Trang này CHỈ để xem danh sách học phần (course) theo ngành.
+// Việc đăng ký thực tế được thực hiện ở trang "Đăng ký học" (Register.js)
 import { useState, useEffect } from 'react';
-import {
-  getPeriods,
-  getCourses,
-  getRegistrations,
-  createRegistration,
-  deleteRegistration
-} from '../../api/axios';
+import { getCourses } from '../../api/axios';
+import '../../App.css';
 
 export default function Courses() {
-  const [periods, setPeriods]         = useState([]);
-  const [courses, setCourses]         = useState([]);
-  const [regs, setRegs]               = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState('');
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter]   = useState('all'); // 'all' | 'general' | 'major'
 
   useEffect(() => {
-    (async () => {
-      try {
-        // 1. Lấy các đợt đang mở
-        const p = await getPeriods();
-        setPeriods(p.data);
-
-        // 2. Nếu có ít nhất 1 đợt open mới fetch courses + regs
-        if (p.data.length > 0) {
-          const [cRes, rRes] = await Promise.all([
-            getCourses(),
-            getRegistrations()
-          ]);
-          setCourses(cRes.data);
-          setRegs(rRes.data);
-        } else {
-          setError('Chưa có đợt đăng ký mở hoặc đã đóng.');
-        }
-      } catch (err) {
-        setError(err.response?.data?.msg || 'Lỗi khi tải dữ liệu');
-      } finally {
-        setLoading(false);
-      }
-    })();
+    getCourses()
+      .then(res => setCourses(res.data))
+      .catch(err => console.error(err))
+      .finally(() => setLoading(false));
   }, []);
 
-  const handleRegister = async courseId => {
-    await createRegistration({ course: courseId });
-    // reload đăng ký
-    const updated = await getRegistrations();
-    setRegs(updated.data);
-  };
+  if (loading) return (
+    <div className="main-content-card" style={{ textAlign: 'center', padding: 60 }}>
+      <p style={{ color: '#64748b' }}>⏳ Đang tải...</p>
+    </div>
+  );
 
-  const handleCancel = async regId => {
-    await deleteRegistration(regId);
-    const updated = await getRegistrations();
-    setRegs(updated.data);
-  };
-
-  if (loading) return <p>Đang tải...</p>;
-  if (error)   return <p style={{ color:'red' }}>{error}</p>;
+  const filtered = courses.filter(c => {
+    if (filter === 'general') return c.isGeneral;
+    if (filter === 'major')   return !c.isGeneral;
+    return true;
+  });
 
   return (
     <div>
-      <h2>Danh sách Học phần</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Mã HP</th><th>Tên học phần</th><th>TC</th>
-            <th>Phân loại</th><th>Áp dụng chuyên ngành</th>
-            <th>Kỳ</th><th>Hành động</th>
-          </tr>
-        </thead>
-        <tbody>
-          {courses.map(course => {
-            const already = regs.some(r => r.course === course._id);
-            return (
-              <tr key={course._id}>
-                <td>{course.code}</td>
-                <td>{course.title}</td>
-                <td>{course.credits}</td>
-                <td><span style={{ padding: '4px 8px', borderRadius: '4px', backgroundColor: course.isGeneral ? '#e0f2fe' : '#fef3c7', color: course.isGeneral ? '#0369a1' : '#b45309', fontWeight: 'bold', fontSize: '0.85em' }}>{course.isGeneral ? 'Đại cương' : 'Chuyên ngành'}</span></td>
-                <td>
-                  {course.majors.map(m=>m.code).join(', ')}
-                </td>
-                <td>{course.semesterOffered}</td>
-                <td>
-                  {already
-                    ? <button onClick={()=>handleCancel(
-                        regs.find(r=>r.course===course._id)._id
-                      )}>Hủy</button>
-                    : <button onClick={()=>handleRegister(course._id)}>Đăng ký</button>
-                  }
-                </td>
+      {/* Thống kê */}
+      <div className="teacher-summary-cards" style={{ marginBottom: 24 }}>
+        <div className="summary-card">
+          <p>Tổng học phần</p>
+          <h3 style={{ color: '#2563eb' }}>{courses.length}</h3>
+        </div>
+        <div className="summary-card">
+          <p>Đại cương</p>
+          <h3 style={{ color: '#7c3aed' }}>{courses.filter(c => c.isGeneral).length}</h3>
+        </div>
+        <div className="summary-card">
+          <p>Chuyên ngành</p>
+          <h3 style={{ color: '#b45309' }}>{courses.filter(c => !c.isGeneral).length}</h3>
+        </div>
+      </div>
+
+      <div className="main-content-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+          <h2 style={{ margin: 0 }}>📖 Danh sách Học phần</h2>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {[['all', 'Tất cả'], ['general', 'Đại cương'], ['major', 'Chuyên ngành']].map(([val, label]) => (
+              <button
+                key={val}
+                onClick={() => setFilter(val)}
+                style={{
+                  padding: '6px 14px', borderRadius: 20, border: '1px solid #d1d5db', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
+                  background: filter === val ? '#2563eb' : '#f8fafc',
+                  color: filter === val ? '#fff' : '#374151',
+                }}
+              >{label}</button>
+            ))}
+          </div>
+        </div>
+
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Mã HP</th>
+                <th>Tên học phần</th>
+                <th style={{ textAlign: 'center' }}>Tín chỉ</th>
+                <th>Phân loại</th>
+                <th>Học kỳ</th>
+                <th>Điều kiện tiên quyết</th>
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
+            </thead>
+            <tbody>
+              {filtered.map(course => (
+                <tr key={course._id}>
+                  <td>
+                    <span style={{ background: '#f1f5f9', color: '#0f172a', padding: '3px 8px', borderRadius: 6, fontWeight: 700, fontSize: '0.85rem' }}>
+                      {course.code}
+                    </span>
+                  </td>
+                  <td style={{ fontWeight: 500, color: '#0f172a' }}>{course.title}</td>
+                  <td style={{ textAlign: 'center', color: '#475569', fontWeight: 600 }}>{course.credits}</td>
+                  <td>
+                    <span style={{
+                      padding: '4px 10px', borderRadius: 20, fontWeight: 600, fontSize: '0.8rem',
+                      background: course.isGeneral ? '#e0f2fe' : '#fef3c7',
+                      color: course.isGeneral ? '#0369a1' : '#b45309',
+                    }}>
+                      {course.isGeneral ? '📘 Đại cương' : '🎓 Chuyên ngành'}
+                    </span>
+                  </td>
+                  <td style={{ color: '#475569' }}>{course.semesterOffered || '—'}</td>
+                  <td style={{ color: '#64748b', fontSize: '0.85rem' }}>
+                    {Array.isArray(course.prerequisites) && course.prerequisites.length > 0
+                      ? course.prerequisites.map(p => p.code || p).join(', ')
+                      : <span style={{ color: '#94a3b8' }}>—</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

@@ -30,6 +30,7 @@ export default function ClassForm() {
   useEffect(() => {
     fetchData();
     if (isEdit) loadClass();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchData = async () => {

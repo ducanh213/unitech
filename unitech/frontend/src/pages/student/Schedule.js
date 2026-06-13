@@ -1,29 +1,41 @@
 // src/pages/student/Schedule.js
+// Chỉ hiển thị lớp thuộc đợt đăng ký ĐANG MỞ (status = open)
 import { useEffect, useState } from 'react';
 import { getRegistrations } from '../../api/axios';
 import { parseSchedule, DAYS, DAY_LABELS, PERIOD_TIMES } from '../../utils/scheduleParser';
 import '../../App.css';
 
-const MORNING = PERIOD_TIMES.slice(0, 5);
+const MORNING   = PERIOD_TIMES.slice(0, 5);
 const AFTERNOON = PERIOD_TIMES.slice(5, 10);
 
-// Lấy lớp đang chiếm ô (day, periodNo)
 function getCell(regs, day, periodNo) {
   return regs.find(r => parseSchedule(r.class?.schedule)[day]?.includes(periodNo));
 }
 
 export default function StudentSchedule() {
-  const [regs, setRegs] = useState([]);
+  const [regs, setRegs]       = useState([]);
   const [loading, setLoading] = useState(true);
+  const [periodName, setPeriodName] = useState('');
 
   useEffect(() => {
     getRegistrations()
-      .then(res => setRegs(res.data))
+      .then(res => {
+        // Chỉ lấy registrations thuộc đợt ĐANG MỞ
+        const openRegs = res.data.filter(r => r.period?.status === 'open');
+        setRegs(openRegs);
+        if (openRegs.length > 0) {
+          setPeriodName(openRegs[0].period?.name || '');
+        }
+      })
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="main-content-card" style={{ textAlign: 'center', padding: 60 }}><p style={{ color: '#64748b' }}>⏳ Đang tải...</p></div>;
+  if (loading) return (
+    <div className="main-content-card" style={{ textAlign: 'center', padding: 60 }}>
+      <p style={{ color: '#64748b' }}>⏳ Đang tải...</p>
+    </div>
+  );
 
   const thS  = { background: '#f8fafc', padding: '10px 8px', fontSize: '0.82rem', fontWeight: 700, color: '#475569', border: '1px solid #e2e8f0', textAlign: 'center', whiteSpace: 'nowrap' };
   const tdS  = { border: '1px solid #e2e8f0', padding: '4px 5px', verticalAlign: 'top', minHeight: 44, minWidth: 88 };
@@ -44,9 +56,17 @@ export default function StudentSchedule() {
 
   return (
     <div>
+      {/* Thống kê */}
       {regs.length > 0 && (
         <div className="teacher-summary-cards" style={{ marginBottom: 24 }}>
-          <div className="summary-card"><p>Số môn đăng ký</p><h3 style={{ color: '#2563eb' }}>{regs.length}</h3></div>
+          <div className="summary-card">
+            <p>Đợt đăng ký</p>
+            <h3 style={{ color: '#7c3aed', fontSize: '0.95rem' }}>{periodName}</h3>
+          </div>
+          <div className="summary-card">
+            <p>Số môn kỳ này</p>
+            <h3 style={{ color: '#2563eb' }}>{regs.length}</h3>
+          </div>
           <div className="summary-card" style={{ gridColumn: 'span 2' }}>
             <p>Danh sách môn</p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
@@ -61,11 +81,18 @@ export default function StudentSchedule() {
       )}
 
       <div className="main-content-card">
-        <h2 style={{ marginTop: 0, marginBottom: 20 }}>Thời khóa biểu</h2>
+        <h2 style={{ marginTop: 0, marginBottom: 4 }}>📅 Thời khóa biểu</h2>
+        {periodName && (
+          <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: 20 }}>
+            Hiển thị lịch học kỳ: <strong style={{ color: '#2563eb' }}>{periodName}</strong>
+          </p>
+        )}
+
         {regs.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 0', color: '#94a3b8' }}>
             <p style={{ fontSize: '2.5rem', margin: '0 0 12px' }}>📅</p>
-            <p>Bạn chưa đăng ký lớp học nào.</p>
+            <p>Bạn chưa đăng ký lớp học nào trong kỳ này.</p>
+            <p style={{ fontSize: '0.85rem' }}>Vào <strong>Đăng ký học</strong> để đăng ký môn học.</p>
           </div>
         ) : (
           <div className="table-scroll">

@@ -22,6 +22,7 @@ export default function TeacherForm() {
   useEffect(() => {
     fetchCourses();
     if (isEdit) loadTeacher();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchCourses = async () => {

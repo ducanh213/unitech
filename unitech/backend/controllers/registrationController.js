@@ -3,6 +3,7 @@ const Registration = require("../models/Registration");
 const ClassModel   = require("../models/Class");
 const Period       = require("../models/Period");
 const Student      = require("../models/Student");
+const Course       = require("../models/Course");
 
 // Tiết học (phút từ 0:00)
 const PERIOD_TIMES = [
@@ -76,8 +77,12 @@ exports.create = async (req, res, next) => {
     const period = await Period.findOne({ _id: periodId, status: "open", isDeleted: false });
     if (!period) return res.status(400).json({ msg: "Đợt đăng ký chưa mở hoặc không tồn tại" });
 
-    // 2) Kiểm tra lớp tồn tại
-    const cls = await ClassModel.findOne({ _id: classId, isDeleted: false });
+    // 2) Kiểm tra lớp tồn tại + lấy thông tin course
+    const cls = await ClassModel.findOne({ _id: classId, isDeleted: false })
+      .populate({
+        path: "course",
+        populate: { path: "prerequisites", select: "code title" }
+      });
     if (!cls) return res.status(400).json({ msg: "Lớp học không tồn tại" });
 
     // 3) Lấy student profile từ token
@@ -88,11 +93,48 @@ exports.create = async (req, res, next) => {
     const dup = await Registration.findOne({ student: studentProfile._id, class: classId, period: periodId });
     if (dup) return res.status(400).json({ msg: "Bạn đã đăng ký lớp này rồi" });
 
-    // 5) Kiểm tra trùng tiết (overlap period-based)
-    const myRegs = await Registration.find({ student: studentProfile._id, period: periodId })
+    // 5) Kiểm tra sĩ số lớp (capacityMax)
+    const currentEnrollment = await Registration.countDocuments({ class: classId });
+    if (currentEnrollment >= cls.capacityMax) {
+      return res.status(400).json({ msg: `Lớp ${cls.classCode} đã đầy (${currentEnrollment}/${cls.capacityMax} chỗ)` });
+    }
+
+    // 6) Lấy lịch sử học tập của sinh viên (tất cả đăng ký đã có điểm tổng kết)
+    const allMyRegs = await Registration.find({ student: studentProfile._id })
+      .populate({ path: "class", populate: { path: "course", select: "code _id" } });
+
+    // Danh sách courseId đã PASS (totalGrade >= 4.0)
+    const passedCourseIds = new Set(
+      allMyRegs
+        .filter(r => r.totalGrade !== null && r.totalGrade >= 4.0 && r.class?.course?._id)
+        .map(r => r.class.course._id.toString())
+    );
+
+    // 7) Kiểm tra môn này đã học qua rồi chưa (nếu đã pass thì không cần đăng ký lại)
+    const courseId = cls.course._id.toString();
+    if (passedCourseIds.has(courseId)) {
+      return res.status(400).json({ msg: `Bạn đã hoàn thành môn "${cls.course.title}" rồi, không cần đăng ký lại` });
+    }
+
+    // 8) Kiểm tra điều kiện tiên quyết (prerequisites)
+    const prerequisites = cls.course.prerequisites || [];
+    if (prerequisites.length > 0) {
+      const missingPrereqs = prerequisites.filter(prereq => {
+        return !passedCourseIds.has(prereq._id.toString());
+      });
+      if (missingPrereqs.length > 0) {
+        const missingNames = missingPrereqs.map(p => p.title || p.code).join(", ");
+        return res.status(400).json({
+          msg: `Chưa đủ điều kiện tiên quyết. Cần hoàn thành: ${missingNames}`
+        });
+      }
+    }
+
+    // 9) Kiểm tra trùng tiết (overlap period-based)
+    const myRegsInPeriod = await Registration.find({ student: studentProfile._id, period: periodId })
       .populate("class", "schedule classCode");
 
-    for (const reg of myRegs) {
+    for (const reg of myRegsInPeriod) {
       if (!reg.class?.schedule) continue;
       if (hasConflict(cls.schedule, reg.class.schedule)) {
         return res.status(400).json({
@@ -101,10 +143,10 @@ exports.create = async (req, res, next) => {
       }
     }
 
-    // 6) Tạo đăng ký
+    // 10) Tạo đăng ký
     const reg = await Registration.create({ student: studentProfile._id, class: classId, period: periodId });
 
-    // 7) Populate để trả về client
+    // 11) Populate để trả về client
     const full = await Registration.findById(reg._id)
       .populate({
         path: "class",
@@ -114,7 +156,7 @@ exports.create = async (req, res, next) => {
       .populate("period", "name semester status");
 
     return res.status(201).json(full);
-  } catch (err) { 
+  } catch (err) {
     console.error("Create Registration Error:", err.message);
     res.status(500).json({ msg: err.message || "Lỗi server" });
   }
@@ -123,10 +165,23 @@ exports.create = async (req, res, next) => {
 // DELETE /api/registrations/:id
 exports.remove = async (req, res, next) => {
   try {
-    const reg = await Registration.findById(req.params.id);
+    const reg = await Registration.findById(req.params.id)
+      .populate("period", "status");
+
     if (!reg) return res.status(404).json({ msg: "Đăng ký không tồn tại" });
-    if (req.user.role !== "student" && req.user.role !== "admin")
-      return res.status(403).json({ msg: "Không có quyền hủy đăng ký" });
+
+    // Chỉ sinh viên sở hữu đăng ký đó mới hủy được
+    if (req.user.role === "student") {
+      const studentProfile = await Student.findOne({ user: req.user.id });
+      if (!studentProfile || reg.student.toString() !== studentProfile._id.toString()) {
+        return res.status(403).json({ msg: "Bạn không có quyền hủy đăng ký này" });
+      }
+      // Chỉ hủy khi đợt đang mở
+      if (!reg.period || reg.period.status !== "open") {
+        return res.status(400).json({ msg: "Không thể hủy đăng ký khi đợt đã đóng hoặc chưa mở" });
+      }
+    }
+
     await Registration.findByIdAndDelete(req.params.id);
     return res.json({ msg: "Hủy đăng ký thành công" });
   } catch (err) { next(err); }

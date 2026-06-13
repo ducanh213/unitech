@@ -22,6 +22,7 @@ app.use("/api/classes", require("./routes/classRoutes"));
 app.use("/api/periods", require("./routes/periodRoutes"));
 app.use("/api/registrations", require("./routes/registrationRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
+app.use("/api/reports",       require("./routes/reportRoutes"));
 
 app.use(require("./middleware/error"));
 

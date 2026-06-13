@@ -1,19 +1,17 @@
 // src/pages/student/Dashboard.js
 import React, { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet } from 'react-router-dom';
 import { doLogout, getUserFromToken } from '../../utils/auth';
 import ChangePasswordModal from '../../components/ChangePasswordModal';
 import '../../App.css';
 
 export default function StudentDashboard() {
-  const navigate = useNavigate();
   const user = getUserFromToken();
   const [showCPW, setShowCPW] = useState(false);
 
   const handleLogout = () => {
     if (window.confirm('Bạn có chắc muốn đăng xuất?')) {
-      doLogout();
-      navigate('/login', { replace: true });
+      doLogout(); // doLogout đã tự redirect về /login
     }
   };
 
@@ -25,11 +23,11 @@ export default function StudentDashboard() {
           <p>Hệ thống quản lý đào tạo</p>
         </div>
         <nav className="dashboard-menu">
-          <NavLink to="/student/profile" className={({ isActive }) => isActive ? 'dashboard-menu-item active' : 'dashboard-menu-item'}>Hồ sơ</NavLink>
-          <NavLink to="/student/register" className={({ isActive }) => isActive ? 'dashboard-menu-item active' : 'dashboard-menu-item'}>Đăng ký học</NavLink>
-          <NavLink to="/student/registrations" className={({ isActive }) => isActive ? 'dashboard-menu-item active' : 'dashboard-menu-item'}>Học phần đã đăng ký</NavLink>
-          <NavLink to="/student/schedule" className={({ isActive }) => isActive ? 'dashboard-menu-item active' : 'dashboard-menu-item'}>Thời khóa biểu</NavLink>
-          <NavLink to="/student/grades" className={({ isActive }) => isActive ? 'dashboard-menu-item active' : 'dashboard-menu-item'}>Điểm số</NavLink>
+          <NavLink to="/student/profile"       className={({ isActive }) => isActive ? 'dashboard-menu-item active' : 'dashboard-menu-item'}>👤 Hồ sơ</NavLink>
+          <NavLink to="/student/register"       className={({ isActive }) => isActive ? 'dashboard-menu-item active' : 'dashboard-menu-item'}>📝 Đăng ký học</NavLink>
+          <NavLink to="/student/registrations"  className={({ isActive }) => isActive ? 'dashboard-menu-item active' : 'dashboard-menu-item'}>📋 Học phần kỳ này</NavLink>
+          <NavLink to="/student/schedule"       className={({ isActive }) => isActive ? 'dashboard-menu-item active' : 'dashboard-menu-item'}>📅 Thời khóa biểu</NavLink>
+          <NavLink to="/student/grades"         className={({ isActive }) => isActive ? 'dashboard-menu-item active' : 'dashboard-menu-item'}>📖 Lịch sử & Điểm số</NavLink>
         </nav>
       </aside>
 

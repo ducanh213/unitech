@@ -27,6 +27,7 @@ import ClassList        from './pages/admin/ClassList';
 import ClassForm        from './pages/admin/ClassForm';
 import PeriodList       from './pages/admin/PeriodList';
 import PeriodForm       from './pages/admin/PeriodForm';
+import AcademicReport  from './pages/admin/AcademicReport';
 
 // Student
 import StudentDashboard  from './pages/student/Dashboard';
@@ -89,6 +90,7 @@ function App() {
           <Route path="periods/new"   element={<PeriodForm   />} />
           <Route path="periods/:id/edit" element={<PeriodForm />} />
           <Route path="profile"       element={<AdminProfile />} />
+          <Route path="report"        element={<AcademicReport />} />
         </Route>
 
         {/* STUDENT */}
