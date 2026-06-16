@@ -6,7 +6,8 @@ const { sendOTP } = require('../utils/email');
 require('dotenv').config();
 
 // POST /api/auth/register
-// body: { username, email, password, extra, phone, address }
+// Đăng ký tài khoản Sinh viên (student) mới
+// body: { username, email, password, extra (studentId), phone, address }
 exports.register = async (req, res, next) => {
   try {
     const { username, email, password, extra /* studentId */, phone, address } = req.body;

@@ -4,14 +4,14 @@ import { getPeriods, getClasses, getRegistrations, createRegistration, deleteReg
 import "../../App.css";
 
 export default function Register() {
-  const [periods, setPeriods]             = useState([]);
+  const [periods, setPeriods] = useState([]);
   const [selectedPeriodId, setSelectedPeriodId] = useState("");
-  const [classes, setClasses]             = useState([]);
-  const [regs, setRegs]                   = useState([]);
-  const [allRegs, setAllRegs]             = useState([]); // tất cả lịch sử đăng ký (để kiểm tra prerequisites)
-  const [loading, setLoading]             = useState(true);
+  const [classes, setClasses] = useState([]);
+  const [regs, setRegs] = useState([]);
+  const [allRegs, setAllRegs] = useState([]); // tất cả lịch sử đăng ký (để kiểm tra prerequisites)
+  const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null); // classId đang thực hiện
-  const [error, setError]                 = useState("");
+  const [error, setError] = useState("");
 
   // ─── Load ban đầu ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -268,8 +268,8 @@ export default function Register() {
                 {classes.map(cls => {
                   const status = getClassStatus(cls);
                   const isRegistered = status.type === "registered";
-                  const isAvailable  = status.type === "available";
-                  const isLoading    = actionLoading === cls._id;
+                  const isAvailable = status.type === "available";
+                  const isLoading = actionLoading === cls._id;
 
                   let rowBg = "";
                   if (isRegistered) rowBg = "#eff6ff";

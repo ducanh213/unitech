@@ -86,6 +86,11 @@ exports.create = async (req, res, next) => {
     next(err);
   }
 };
+
+/**
+ * GET /api/students/me
+ * Lấy thông tin cá nhân của sinh viên đang đăng nhập (dựa trên token)
+ */
 exports.getMe = async (req, res, next) => {
   try {
     // req.user.id là User._id từ token
@@ -191,20 +196,7 @@ exports.getAIPath = async (req, res, next) => {
 
     const Registration = require('../models/Registration');
     
-    // 1. Lấy tất cả đăng ký trượt của sinh viên (có điểm và điểm < 4.0)
-    const failedRegs = await Registration.find({
-      student: student._id,
-      totalGrade: { $lt: 4.0, $ne: null }
-    }).populate({
-      path: 'class',
-      populate: { path: 'course' }
-    });
-
-    const failedCourseCodes = failedRegs
-      .filter(r => r.class && r.class.course)
-      .map(r => r.class.course.code);
-
-    // 2. Lấy TẤT CẢ các đăng ký của sinh viên (để lọc ra các môn đã đỗ HOẶC chưa có điểm/đang học)
+    // 1. Lấy tất cả đăng ký của sinh viên
     const allRegs = await Registration.find({
       student: student._id
     }).populate({
@@ -212,16 +204,40 @@ exports.getAIPath = async (req, res, next) => {
       populate: { path: 'course' }
     });
 
-    // Môn "đã qua hoặc đang học": là tất cả các môn đã đăng ký TRỪ đi các môn bị trượt
+    // 2. Môn đã trượt (totalGrade < 4.0)
+    const failedCourseCodes = allRegs
+      .filter(r => r.class && r.class.course && r.totalGrade !== null && r.totalGrade < 4.0)
+      .map(r => r.class.course.code);
+
+    // 3. Môn đã qua hoặc đang học (không tính môn trượt)
     let passedCourseCodes = allRegs
       .filter(r => r.class && r.class.course && !failedCourseCodes.includes(r.class.course.code))
       .map(r => r.class.course.code);
-      
-    // Loại bỏ trùng lặp nếu sinh viên đăng ký môn nhiều lần
     passedCourseCodes = [...new Set(passedCourseCodes)];
 
-    // 3. Lọc lại mã môn trượt: nếu môn đó đã được học lại và qua (có trong passedCourseCodes) thì bỏ khỏi danh sách trượt
+    // 4. Nếu môn trượt đã được học lại và qua, bỏ khỏi danh sách trượt
     const finalFailedCourseCodes = failedCourseCodes.filter(code => !passedCourseCodes.includes(code));
+
+    // ── KIỂM TRA HOÀN THÀNH CHƯƠNG TRÌNH ─────────────────────────────────────
+    // Đếm số môn unique đã có điểm >= 4.0 (đã qua, không kể đang chờ điểm)
+    const uniquePassedCodes = [...new Set(
+      allRegs
+        .filter(r => r.class && r.class.course && r.totalGrade !== null && r.totalGrade >= 4.0)
+        .map(r => r.class.course.code)
+    )];
+
+    const TOTAL_CURRICULUM_COURSES = 14; // Tổng số môn trong chương trình đào tạo
+
+    if (uniquePassedCodes.length >= TOTAL_CURRICULUM_COURSES && finalFailedCourseCodes.length === 0) {
+      return res.json({
+        status: 'completed',
+        completed: true,
+        totalPassed: uniquePassedCodes.length,
+        recommendations: [],
+        message: 'Chúc mừng! Bạn đã hoàn thành toàn bộ chương trình đào tạo.'
+      });
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     const axios = require('axios');
     const response = await axios.post('http://127.0.0.1:8080/recommend-path', {
@@ -231,12 +247,10 @@ exports.getAIPath = async (req, res, next) => {
 
     const recommendedCodes = response.data.recommendations || [];
 
-    // Query chi tiết các môn học được gợi ý, gắn thêm isRetry flag
     const Course = require('../models/Course');
     const suggestedCourses = await Course.find({ code: { $in: recommendedCodes } })
                                          .select('code title credits');
 
-    // Map lại theo đúng thứ tự + gắn isRetry để frontend phân biệt
     const orderedCourses = recommendedCodes
       .map(code => {
         const course = suggestedCourses.find(c => c.code === code);
@@ -246,13 +260,14 @@ exports.getAIPath = async (req, res, next) => {
           code:    course.code,
           title:   course.title,
           credits: course.credits,
-          isRetry: finalFailedCourseCodes.includes(code)  // true = học lại, false = môn tiếp theo
+          isRetry: finalFailedCourseCodes.includes(code)
         };
       })
       .filter(Boolean);
 
     res.json({
       status: 'success',
+      completed: false,
       recommendations: orderedCourses
     });
   } catch (err) {

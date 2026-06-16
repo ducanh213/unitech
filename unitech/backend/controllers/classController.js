@@ -215,7 +215,7 @@ exports.remove = async (req, res, next) => {
 /**
  * GET /api/classes/:id/students
  * Lấy danh sách sinh viên trong một lớp (Dành cho giảng viên / admin)
- * → Chỉ lấy sinh viên thuộc KỲ ĐANG CHẤM ĐIỂM (kỳ gần nhất đã kết thúc, không phải kỳ đang mở)
+ * → Ưu tiên lấy sinh viên thuộc KỲ ĐANG MỞ (nếu có đăng ký), ngược lại lấy kỳ đóng gần nhất
  */
 exports.getClassStudents = async (req, res, next) => {
   try {
@@ -263,6 +263,7 @@ exports.getClassStudents = async (req, res, next) => {
 /**
  * PUT /api/classes/:id/students/:studentId/grades
  * Cập nhật điểm cho 1 sinh viên trong lớp (Dành cho giảng viên)
+ * → Áp dụng cho kỳ học đang mở, hoặc kỳ đóng gần nhất (nhưng chặn nếu khóa từ 2025)
  */
 exports.updateStudentGrades = async (req, res, next) => {
   try {
@@ -329,6 +330,7 @@ exports.updateStudentGrades = async (req, res, next) => {
 /**
  * GET /api/classes/:id/ai-risk
  * Gửi điểm số sang Server Python AI để đánh giá rủi ro trượt môn
+ * → Tự động lọc danh sách sinh viên theo kỳ đang hoạt động (mở hoặc đóng gần nhất)
  */
 exports.getAIRisk = async (req, res, next) => {
   try {

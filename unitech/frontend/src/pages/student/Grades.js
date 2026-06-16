@@ -13,6 +13,7 @@ export default function Grades() {
   const [recommendations, setRecommendations] = useState([]);
   const [analyzing, setAnalyzing] = useState(false);
   const [aiMsg, setAiMsg] = useState('');
+  const [completedInfo, setCompletedInfo] = useState(null); // { totalPassed }
 
   useEffect(() => {
     fetchGrades();
@@ -34,12 +35,23 @@ export default function Grades() {
     try {
       setAnalyzing(true);
       setAiMsg('');
+      setCompletedInfo(null);
+      setRecommendations([]);
       const token = localStorage.getItem('token');
       const res = await axiosGlobal.get('http://localhost:5000/api/students/me/ai-path', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setRecommendations(res.data.recommendations || []);
-      setAiMsg(res.data.recommendations?.length > 0 ? '✅ Đã phân tích xong lộ trình học tập!' : '✅ Bạn đã hoàn thành lộ trình học!');
+      if (res.data.completed) {
+        // Sinh viên đã hoàn thành toàn bộ chương trình
+        setCompletedInfo({ totalPassed: res.data.totalPassed });
+        setRecommendations([]);
+        setAiMsg('');
+      } else {
+        setRecommendations(res.data.recommendations || []);
+        setAiMsg(res.data.recommendations?.length > 0
+          ? '✅ Đã phân tích xong lộ trình học tập!'
+          : '✅ Không còn môn học nào phù hợp để gợi ý.');
+      }
     } catch (err) {
       console.error(err);
       setAiMsg('❌ Lỗi gọi Server AI. Kiểm tra kết nối.');
@@ -141,6 +153,31 @@ export default function Grades() {
 
         {aiMsg && <p style={{ color: aiMsg.includes('✅') ? '#16a34a' : '#dc2626', fontWeight: 600 }}>{aiMsg}</p>}
 
+        {/* Banner hoàn thành chương trình */}
+        {completedInfo && (
+          <div style={{
+            marginTop: '20px',
+            padding: '24px 28px',
+            borderRadius: '16px',
+            background: 'linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%)',
+            border: '2px solid #86efac',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '20px'
+          }}>
+            <div style={{ fontSize: '3rem', lineHeight: 1 }}>🎓</div>
+            <div>
+              <h3 style={{ margin: '0 0 6px', color: '#15803d', fontSize: '1.15rem' }}>
+                Chúc mừng! Bạn đã hoàn thành chương trình đào tạo!
+              </h3>
+              <p style={{ margin: 0, color: '#166534', fontSize: '0.95rem' }}>
+                Đã vượt qua <strong>{completedInfo.totalPassed}/{completedInfo.totalPassed} môn học</strong> trong chương trình. Không còn môn nào cần học thêm.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Danh sách gợi ý môn học */}
         {recommendations.length > 0 && (
           <div style={{ display: 'flex', gap: '16px', marginTop: '20px', flexWrap: 'wrap' }}>
             {recommendations.map((course, idx) => {
