@@ -4,7 +4,7 @@ export const getStudentMe = () => {
   return instance.get("/students/me");
 };
 const instance = axios.create({
-  baseURL: "http://localhost:5000/api", 
+  baseURL: "http://localhost:5000/api",
 });
 
 

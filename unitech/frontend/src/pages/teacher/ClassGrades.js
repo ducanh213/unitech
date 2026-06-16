@@ -105,6 +105,9 @@ export default function ClassGrades() {
   };
 
   const gradedCount = students.filter(s => s.totalGrade !== null).length;
+  // Kiểm tra kỳ hiện tại có được phép sửa điểm không (Học kỳ 2 2026 trở đi)
+  const currentPeriod = students[0]?.period;
+  const isOpenPeriod  = currentPeriod ? new Date(currentPeriod.endDate) > new Date('2025-12-31T23:59:59Z') : false;
 
   return (
     <div>
@@ -167,6 +170,14 @@ export default function ClassGrades() {
           <p>Chờ nhập điểm</p>
           <h3 style={{ color: '#d97706' }}>{loading ? '…' : students.length - gradedCount}</h3>
         </div>
+        {!loading && currentPeriod && (
+          <div className="summary-card" style={{ borderLeft: `3px solid ${isOpenPeriod ? '#16a34a' : '#94a3b8'}` }}>
+            <p>Kỳ học</p>
+            <h3 style={{ color: isOpenPeriod ? '#16a34a' : '#64748b', fontSize: '0.95rem' }}>
+              {isOpenPeriod ? '🟢' : '🔒'} {currentPeriod.name}
+            </h3>
+          </div>
+        )}
       </div>
 
       <div className="main-content-card">
@@ -331,7 +342,11 @@ export default function ClassGrades() {
 
                       {/* Thao tác */}
                       <td style={{ textAlign: 'center' }}>
-                        {isEditing ? (
+                        {!isOpenPeriod ? (
+                          <span title="Kỳ đã đóng, không thể sửa điểm" style={{ color: '#94a3b8', fontSize: '1.1rem' }}>
+                            🔒
+                          </span>
+                        ) : isEditing ? (
                           <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
                             <button
                               onClick={() => handleSave(reg.student._id)}

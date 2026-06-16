@@ -23,7 +23,7 @@ export default function Register() {
           getRegistrations(),
         ]);
 
-        const openPeriods = periodsRes.data.filter(p => p.status === "open");
+        const openPeriods = periodsRes.data.filter(p => p.status === 'open');
         setPeriods(openPeriods);
         setAllRegs(allRegsRes.data);
 

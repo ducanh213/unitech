@@ -2,7 +2,7 @@
 // "Học phần kỳ này" — chỉ hiển thị các môn đã đăng ký trong đợt ĐANG MỞ
 // + nút Hủy (khi đợt còn mở)
 import React, { useState, useEffect } from 'react';
-import { getRegistrations, deleteRegistration } from '../../api/axios';
+import { getRegistrations, deleteRegistration, getPeriods } from '../../api/axios';
 import '../../App.css';
 
 export default function RegistrationList() {
@@ -11,27 +11,45 @@ export default function RegistrationList() {
   const [loading, setLoading] = useState(true);
   const [periodInfo, setPeriodInfo] = useState(null);
 
-  useEffect(() => { fetchData(); }, []);
+  const [allRegs, setAllRegs]       = useState([]);
+  const [periods, setPeriods]       = useState([]);
+  const [selectedPeriodId, setSelectedPeriodId] = useState('');
 
-  const fetchData = async () => {
-    try {
-      const { data } = await getRegistrations();
-      // Chỉ lấy registrations của đợt đang mở
-      const openRegs = data.filter(r => r.period?.status === 'open');
-      setRegs(openRegs);
-      if (openRegs.length > 0) setPeriodInfo(openRegs[0].period);
-    } catch (err) {
-      setError(err.response?.data?.msg || 'Không tải được đăng ký');
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    Promise.all([getRegistrations(), getPeriods()])
+      .then(([regsRes, periodsRes]) => {
+        setAllRegs(regsRes.data);
+        const periodsData = periodsRes.data;
+        setPeriods(periodsData);
+        
+        const isRegOpen = p => p.isRegistrationOpen || (p.name || '').toLowerCase().includes('hè') || (p.semester || '').includes('KH');
+        let defaultPeriod = periodsData.find(isRegOpen);
+        if (!defaultPeriod) defaultPeriod = periodsData.find(p => p.status === 'open');
+        if (!defaultPeriod && periodsData.length > 0) defaultPeriod = periodsData[0];
+        
+        if (defaultPeriod) {
+          setSelectedPeriodId(defaultPeriod._id);
+        }
+      })
+      .catch(err => setError(err.response?.data?.msg || 'Không tải được dữ liệu'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (selectedPeriodId) {
+      const filtered = allRegs.filter(r => r.period?._id === selectedPeriodId);
+      setRegs(filtered);
+      const selectedP = periods.find(p => p._id === selectedPeriodId);
+      setPeriodInfo(selectedP);
     }
-  };
+  }, [selectedPeriodId, allRegs, periods]);
 
   const handleCancel = async (id) => {
     if (!window.confirm('Bạn có chắc muốn hủy đăng ký?\nViệc hủy sẽ xóa môn này khỏi thời khóa biểu.')) return;
     try {
       await deleteRegistration(id);
       setRegs(regs.filter(r => r._id !== id));
+      setAllRegs(allRegs.filter(r => r._id !== id));
     } catch (err) {
       setError(err.response?.data?.msg || 'Hủy đăng ký thất bại');
     }
@@ -66,15 +84,29 @@ export default function RegistrationList() {
       </div>
 
       <div className="main-content-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h2 style={{ margin: '0 0 4px' }}>📋 Học phần kỳ này</h2>
+            <h2 style={{ margin: '0 0 4px' }}>📋 Danh sách Học phần</h2>
             {periodInfo && (
               <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
-                🟢 {periodInfo.name} · {periodInfo.semester} · Đang mở
+                Hiển thị kỳ: <strong style={{ color: '#2563eb' }}>{periodInfo.name}</strong>
               </p>
             )}
           </div>
+          {periods.length > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <label style={{ fontWeight: 600, color: "#374151" }}>Chọn kỳ:</label>
+              <select
+                value={selectedPeriodId}
+                onChange={e => setSelectedPeriodId(e.target.value)}
+                style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: "0.9rem" }}
+              >
+                {periods.map(p => (
+                  <option key={p._id} value={p._id}>{p.name} ({p.semester})</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {error && (
@@ -100,7 +132,9 @@ export default function RegistrationList() {
                   <th>Lịch học</th>
                   <th>Phòng</th>
                   <th style={{ textAlign: 'center' }}>Điểm</th>
-                  <th style={{ textAlign: 'center' }}>Hành động</th>
+                  {(periodInfo?.isRegistrationOpen || (periodInfo?.name || '').toLowerCase().includes('hè') || (periodInfo?.semester || '').includes('KH')) && (
+                    <th style={{ textAlign: 'center' }}>Hành động</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -119,18 +153,24 @@ export default function RegistrationList() {
                       <td style={{ color: '#475569', fontSize: '0.88rem' }}>{cls.schedule || '—'}</td>
                       <td style={{ color: '#475569' }}>{cls.room || '—'}</td>
                       <td style={{ textAlign: 'center' }}>
-                        <span style={{ display: 'inline-block', padding: '4px 10px', borderRadius: 20, fontSize: '0.78rem', fontWeight: 600, background: '#f1f5f9', color: '#94a3b8' }}>
-                          ⏳ Chờ điểm
-                        </span>
+                        {r.totalGrade !== null && r.totalGrade !== undefined ? (
+                          <span style={{ fontWeight: 700, color: '#16a34a' }}>{r.totalGrade}</span>
+                        ) : (
+                          <span style={{ display: 'inline-block', padding: '4px 10px', borderRadius: 20, fontSize: '0.78rem', fontWeight: 600, background: '#f1f5f9', color: '#94a3b8' }}>
+                            ⏳ Chờ điểm
+                          </span>
+                        )}
                       </td>
-                      <td style={{ textAlign: 'center' }}>
-                        <button
-                          className="delete-btn"
-                          onClick={() => handleCancel(r._id)}
-                        >
-                          🗑 Hủy
-                        </button>
-                      </td>
+                      {(periodInfo?.isRegistrationOpen || (periodInfo?.name || '').toLowerCase().includes('hè') || (periodInfo?.semester || '').includes('KH')) && (
+                        <td style={{ textAlign: 'center' }}>
+                          <button
+                            className="delete-btn"
+                            onClick={() => handleCancel(r._id)}
+                          >
+                            🗑 Hủy
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

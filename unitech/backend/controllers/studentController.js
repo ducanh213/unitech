@@ -191,21 +191,7 @@ exports.getAIPath = async (req, res, next) => {
 
     const Registration = require('../models/Registration');
     
-    // Lấy tất cả đăng ký đã qua môn của sinh viên này
-    const passedRegs = await Registration.find({
-      student: student._id,
-      totalGrade: { $gte: 4.0 }
-    }).populate({
-      path: 'class',
-      populate: { path: 'course' }
-    });
-
-    // Gom danh sách mã môn đã qua
-    const passedCourseCodes = passedRegs
-      .filter(r => r.class && r.class.course)
-      .map(r => r.class.course.code);
-
-    // Lấy tất cả đăng ký trượt của sinh viên
+    // 1. Lấy tất cả đăng ký trượt của sinh viên (có điểm và điểm < 4.0)
     const failedRegs = await Registration.find({
       student: student._id,
       totalGrade: { $lt: 4.0, $ne: null }
@@ -214,28 +200,60 @@ exports.getAIPath = async (req, res, next) => {
       populate: { path: 'course' }
     });
 
-    // Lọc ra mã môn trượt (nhưng chưa từng qua môn này ở lớp khác)
     const failedCourseCodes = failedRegs
       .filter(r => r.class && r.class.course)
-      .map(r => r.class.course.code)
-      .filter(code => !passedCourseCodes.includes(code)); // Nếu đã qua ở lần học lại thì bỏ qua
+      .map(r => r.class.course.code);
+
+    // 2. Lấy TẤT CẢ các đăng ký của sinh viên (để lọc ra các môn đã đỗ HOẶC chưa có điểm/đang học)
+    const allRegs = await Registration.find({
+      student: student._id
+    }).populate({
+      path: 'class',
+      populate: { path: 'course' }
+    });
+
+    // Môn "đã qua hoặc đang học": là tất cả các môn đã đăng ký TRỪ đi các môn bị trượt
+    let passedCourseCodes = allRegs
+      .filter(r => r.class && r.class.course && !failedCourseCodes.includes(r.class.course.code))
+      .map(r => r.class.course.code);
+      
+    // Loại bỏ trùng lặp nếu sinh viên đăng ký môn nhiều lần
+    passedCourseCodes = [...new Set(passedCourseCodes)];
+
+    // 3. Lọc lại mã môn trượt: nếu môn đó đã được học lại và qua (có trong passedCourseCodes) thì bỏ khỏi danh sách trượt
+    const finalFailedCourseCodes = failedCourseCodes.filter(code => !passedCourseCodes.includes(code));
 
     const axios = require('axios');
     const response = await axios.post('http://127.0.0.1:8080/recommend-path', {
       passed_courses: passedCourseCodes,
-      failed_courses: failedCourseCodes
+      failed_courses: finalFailedCourseCodes
     });
 
     const recommendedCodes = response.data.recommendations || [];
 
-    // Query chi tiết các môn học được gợi ý
+    // Query chi tiết các môn học được gợi ý, gắn thêm isRetry flag
     const Course = require('../models/Course');
     const suggestedCourses = await Course.find({ code: { $in: recommendedCodes } })
                                          .select('code title credits');
 
+    // Map lại theo đúng thứ tự + gắn isRetry để frontend phân biệt
+    const orderedCourses = recommendedCodes
+      .map(code => {
+        const course = suggestedCourses.find(c => c.code === code);
+        if (!course) return null;
+        return {
+          _id:     course._id,
+          code:    course.code,
+          title:   course.title,
+          credits: course.credits,
+          isRetry: finalFailedCourseCodes.includes(code)  // true = học lại, false = môn tiếp theo
+        };
+      })
+      .filter(Boolean);
+
     res.json({
       status: 'success',
-      recommendations: suggestedCourses
+      recommendations: orderedCourses
     });
   } catch (err) {
     console.error("Lỗi gọi Server AI:", err.message);

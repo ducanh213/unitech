@@ -39,7 +39,7 @@ export default function Grades() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setRecommendations(res.data.recommendations || []);
-      setAiMsg('✅ Đã phân tích xong lộ trình học tập!');
+      setAiMsg(res.data.recommendations?.length > 0 ? '✅ Đã phân tích xong lộ trình học tập!' : '✅ Bạn đã hoàn thành lộ trình học!');
     } catch (err) {
       console.error(err);
       setAiMsg('❌ Lỗi gọi Server AI. Kiểm tra kết nối.');
@@ -50,6 +50,7 @@ export default function Grades() {
 
   // Tính GPA (trung bình các môn đã có điểm tổng kết, không tính kỳ hiện tại)
   const gradedCourses = grades.filter(r => r.totalGrade !== null);
+  const round1 = v => v !== null && v !== undefined ? Math.round(parseFloat(v) * 10) / 10 : v;
   const gpa = gradedCourses.length > 0
     ? (gradedCourses.reduce((sum, r) => sum + r.totalGrade, 0) / gradedCourses.length).toFixed(2)
     : null;
@@ -142,17 +143,31 @@ export default function Grades() {
 
         {recommendations.length > 0 && (
           <div style={{ display: 'flex', gap: '16px', marginTop: '20px', flexWrap: 'wrap' }}>
-            {recommendations.map((course, idx) => (
-              <div key={idx} style={{
-                background: '#fff', padding: '16px', borderRadius: '16px', 
-                borderLeft: '4px solid #0ea5e9', boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
-                minWidth: '200px'
-              }}>
-                <h4 style={{ margin: '0 0 8px', color: '#0f172a' }}>{course.title}</h4>
-                <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>Mã: <strong>{course.code}</strong></p>
-                <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '0.9rem' }}>Tín chỉ: {course.credits}</p>
-              </div>
-            ))}
+            {recommendations.map((course, idx) => {
+              const isRetry = course.isRetry;
+              return (
+                <div key={idx} style={{
+                  background: '#fff', padding: '16px', borderRadius: '16px',
+                  borderLeft: `4px solid ${isRetry ? '#ef4444' : '#0ea5e9'}`,
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
+                  minWidth: '200px'
+                }}>
+                  <div style={{ marginBottom: 6 }}>
+                    <span style={{
+                      fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px',
+                      borderRadius: 8,
+                      background: isRetry ? '#fee2e2' : '#e0f2fe',
+                      color: isRetry ? '#dc2626' : '#0284c7'
+                    }}>
+                      {isRetry ? '🔁 Học lại' : '➡️ Tiếp theo'}
+                    </span>
+                  </div>
+                  <h4 style={{ margin: '0 0 8px', color: '#0f172a' }}>{course.title}</h4>
+                  <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>Mã: <strong>{course.code}</strong></p>
+                  <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '0.9rem' }}>Tín chỉ: {course.credits}</p>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -229,12 +244,12 @@ export default function Grades() {
                         {reg.period?.name ?? '—'}
                       </td>
                       <td style={{ textAlign: 'center', color: '#475569' }}>
-                        {reg.attendanceGrade !== null ? reg.attendanceGrade : (
+                        {reg.attendanceGrade !== null ? round1(reg.attendanceGrade) : (
                           <span style={{ color: '#cbd5e1' }}>—</span>
                         )}
                       </td>
                       <td style={{ textAlign: 'center', color: '#475569' }}>
-                        {reg.midtermGrade !== null ? reg.midtermGrade : (
+                        {reg.midtermGrade !== null ? round1(reg.midtermGrade) : (
                           <span style={{ color: '#cbd5e1' }}>—</span>
                         )}
                       </td>

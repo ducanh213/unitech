@@ -8,7 +8,7 @@ const Period = require('../models/Period');
  */
 exports.getAll = async (req, res, next) => {
   try {
-    const list = await Period.find({ isDeleted: false });
+    const list = await Period.find({ isDeleted: false }).sort({ startDate: 1 });
     res.json(list);
   } catch (err) {
     next(err);
@@ -92,9 +92,20 @@ exports.open = async (req, res, next) => {
   try {
     const p = await Period.findOne({ _id: req.params.id, isDeleted: false });
     if (!p) return res.status(404).json({ msg: 'Không tìm thấy đợt đăng ký' });
-    if (p.status !== 'pending') {
-      return res.status(400).json({ msg: 'Chỉ có đợt ở trạng thái pending mới mở được' });
+    if (p.status === 'open') {
+      return res.status(400).json({ msg: 'Đợt đăng ký đã đang mở rồi' });
     }
+
+    const now = new Date();
+    const startDate = new Date(p.startDate);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(p.endDate);
+    endDate.setHours(23, 59, 59, 999);
+
+    if (now < startDate || now > endDate) {
+      return res.status(400).json({ msg: `Chỉ có thể mở đợt đang trong thời gian thực (${startDate.toLocaleDateString('vi-VN')} - ${endDate.toLocaleDateString('vi-VN')})` });
+    }
+
     p.status = 'open';
     await p.save();
     res.json({ msg: 'Đợt đăng ký đã được mở', period: p });

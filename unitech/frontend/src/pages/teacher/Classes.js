@@ -11,7 +11,12 @@ export default function Classes() {
     (async () => {
       try {
         const res = await getClasses();
-        setClasses(res.data);
+        const sortedData = res.data.sort((a, b) => {
+          const dateA = a.gradingPeriod ? new Date(a.gradingPeriod.startDate).getTime() : 0;
+          const dateB = b.gradingPeriod ? new Date(b.gradingPeriod.startDate).getTime() : 0;
+          return dateA - dateB;
+        });
+        setClasses(sortedData);
       } catch (err) {
         console.error('Lỗi khi tải lớp dạy:', err);
       }
@@ -47,7 +52,19 @@ export default function Classes() {
                     </span>
                   </td>
                   <td style={{ color: '#64748b' }}>{cls.course?.code}</td>
-                  <td style={{ fontWeight: 500, color: '#0f172a' }}>{cls.course?.title}</td>
+                  <td style={{ fontWeight: 500, color: '#0f172a' }}>
+                    {cls.course?.title}
+                    {cls.gradingPeriod?.name && (
+                      <span style={{
+                        marginLeft: '8px', padding: '2px 8px',
+                        background: '#e0e7ff', color: '#4338ca',
+                        borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600,
+                        border: '1px solid #c7d2fe'
+                      }}>
+                        {cls.gradingPeriod.name}
+                      </span>
+                    )}
+                  </td>
                   <td>{cls.room}</td>
                   <td>{cls.schedule}</td>
                   <td style={{ textAlign: 'center' }}>

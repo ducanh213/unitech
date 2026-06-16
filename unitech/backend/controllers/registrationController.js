@@ -63,7 +63,7 @@ exports.getAll = async (req, res, next) => {
         select: "classCode schedule room",
         populate: { path: "course", select: "code title credits" },
       })
-      .populate("period", "name semester status");
+      .populate("period", "name semester status isRegistrationOpen");
     return res.json(list);
   } catch (err) { next(err); }
 };
@@ -73,9 +73,11 @@ exports.create = async (req, res, next) => {
   try {
     const { class: classId, period: periodId } = req.body;
 
-    // 1) Kiểm tra period đang mở
-    const period = await Period.findOne({ _id: periodId, status: "open", isDeleted: false });
-    if (!period) return res.status(400).json({ msg: "Đợt đăng ký chưa mở hoặc không tồn tại" });
+    // 1) Kiểm tra period đang mở đăng ký
+    const period = await Period.findOne({ _id: periodId, isDeleted: false });
+    if (!period || period.status !== 'open') {
+      return res.status(400).json({ msg: "Đợt đăng ký chưa mở hoặc không tồn tại" });
+    }
 
     // 2) Kiểm tra lớp tồn tại + lấy thông tin course
     const cls = await ClassModel.findOne({ _id: classId, isDeleted: false })
@@ -153,7 +155,7 @@ exports.create = async (req, res, next) => {
         select: "classCode schedule room",
         populate: { path: "course", select: "code title credits" },
       })
-      .populate("period", "name semester status");
+      .populate("period", "name semester status isRegistrationOpen");
 
     return res.status(201).json(full);
   } catch (err) {
@@ -166,7 +168,7 @@ exports.create = async (req, res, next) => {
 exports.remove = async (req, res, next) => {
   try {
     const reg = await Registration.findById(req.params.id)
-      .populate("period", "status");
+      .populate("period", "name status isRegistrationOpen");
 
     if (!reg) return res.status(404).json({ msg: "Đăng ký không tồn tại" });
 
@@ -176,9 +178,10 @@ exports.remove = async (req, res, next) => {
       if (!studentProfile || reg.student.toString() !== studentProfile._id.toString()) {
         return res.status(403).json({ msg: "Bạn không có quyền hủy đăng ký này" });
       }
-      // Chỉ hủy khi đợt đang mở
-      if (!reg.period || reg.period.status !== "open") {
-        return res.status(400).json({ msg: "Không thể hủy đăng ký khi đợt đã đóng hoặc chưa mở" });
+      // Đảm bảo chỉ có đợt đang mở đăng ký mới được phép hủy.
+      const p = reg.period;
+      if (!p || p.status !== 'open') {
+        return res.status(400).json({ msg: "Kỳ học này đã kết thúc hoặc chưa mở. Không được phép thay đổi dữ liệu." });
       }
     }
 

@@ -166,27 +166,30 @@ export default function PeriodList() {
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
-                          {p.status === 'pending' && (
-                            <button
-                              onClick={() => handleOpen(p._id)}
-                              disabled={isActing}
-                              style={{ background: '#16a34a', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem' }}
-                            >
-                              {isActing ? '...' : '🟢 Mở'}
-                            </button>
-                          )}
-                          {p.status === 'open' && (
-                            <button
-                              onClick={() => handleClose(p._id)}
-                              disabled={isActing}
-                              style={{ background: '#dc2626', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem' }}
-                            >
-                              {isActing ? '...' : '🔒 Đóng'}
-                            </button>
-                          )}
-                          {p.status === 'closed' && (
-                            <span style={{ color: '#94a3b8', fontSize: '0.8rem', padding: '5px 8px' }}>Đã kết thúc</span>
-                          )}
+                          {/* Nút Gạt Trạng Thái (Toggle) */}
+                          <button
+                            onClick={() => p.status === 'open' ? handleClose(p._id) : handleOpen(p._id)}
+                            disabled={isActing}
+                            style={{ 
+                              display: 'flex', alignItems: 'center', gap: 8,
+                              background: p.status === 'open' ? '#16a34a' : '#cbd5e1', 
+                              color: p.status === 'open' ? '#fff' : '#475569', 
+                              border: 'none', borderRadius: 20, 
+                              padding: '4px 12px 4px 6px', cursor: 'pointer', 
+                              fontWeight: 600, fontSize: '0.82rem',
+                              transition: 'all 0.3s'
+                            }}
+                          >
+                            <div style={{
+                              width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                              transform: p.status === 'open' ? 'translateX(18px)' : 'translateX(0)',
+                              transition: 'transform 0.3s',
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                            }} />
+                            <span style={{ transform: p.status === 'open' ? 'translateX(-12px)' : 'translateX(4px)', transition: 'transform 0.3s' }}>
+                              {p.status === 'open' ? 'Mở' : 'Đóng'}
+                            </span>
+                          </button>
                           <button
                             onClick={() => navigate(`${p._id}/edit`)}
                             disabled={isActing}

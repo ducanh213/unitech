@@ -41,7 +41,6 @@ exports.register = async (req, res, next) => {
 // POST /api/auth/login
 exports.login = async (req, res, next) => {
   try { 
-    console.log('Login attempt:', req.body);
     const { email, password } = req.body;
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ msg: 'Sai email hoặc mật khẩu' });

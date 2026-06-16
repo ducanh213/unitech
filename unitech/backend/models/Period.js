@@ -22,7 +22,11 @@ const PeriodSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['pending','open','closed'],
-    default: 'pending'  // pending → open → closed
+    default: 'pending'  // pending → open → closed (dùng cho giảng dạy/chấm điểm)
+  },
+  isRegistrationOpen: {
+    type: Boolean,
+    default: false      // Dùng cho đợt đăng ký học
   },
   isSupplementary: {
     type: Boolean,

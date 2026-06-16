@@ -42,17 +42,34 @@ exports.getAll = async (req, res, next) => {
     const list = await ClassModel.find(filter)
       .populate({
         path: 'course',
-        select: 'code title credits prerequisites',
+        select: 'code title credits semesterOffered prerequisites',
         populate: { path: 'prerequisites', select: 'code title' }
       })
       .populate('teacher', 'teacherId fullName');
 
-    // Gắn thêm currentEnrollment (số SV đã đăng ký) cho mỗi lớp
+    // Lấy kỳ đang mở (để chấm điểm/giảng dạy)
+    const Period = require('../models/Period');
+    const openPeriod = await Period.findOne({ status: 'open' });
+
+    // Gắn thêm currentEnrollment và gradingPeriod cho mỗi lớp
     const listWithEnrollment = await Promise.all(
       list.map(async cls => {
         const count = await Registration.countDocuments({ class: cls._id });
+        const countInOpen = openPeriod ? await Registration.countDocuments({ class: cls._id, period: openPeriod._id }) : 0;
+        
+        // Xác định đợt học của lớp (dựa trên registration)
+        const periodsWithRegs = await Registration.distinct('period', { class: cls._id });
+        const hasOpenReg = openPeriod && periodsWithRegs.some(p => p.toString() === openPeriod._id.toString());
+        const gradingPeriod = periodsWithRegs.length
+          ? (hasOpenReg
+              ? openPeriod
+              : await Period.findOne({ _id: { $in: periodsWithRegs }, status: 'closed' }).sort({ endDate: -1 }))
+          : null;
+
         const obj = cls.toObject();
         obj.currentEnrollment = count;
+        obj.isActiveInOpenPeriod = countInOpen > 0;
+        obj.gradingPeriod = gradingPeriod;
         return obj;
       })
     );
@@ -216,18 +233,17 @@ exports.getClassStudents = async (req, res, next) => {
       }
     }
 
-    // Tìm kỳ đang mở để loại trừ
+    // Lấy tất cả các kỳ mà lớp này có sinh viên đăng ký
+    const periodsWithRegs = await Registration.distinct('period', { class: id });
+
+    // Ưu tiên kỳ đang MỞ nếu lớp có đăng ký trong kỳ đó,
+    // nếu không thì lấy kỳ đóng gần nhất (để chấm điểm kỳ cũ)
     const openPeriod = await Period.findOne({ status: 'open' });
-    const excludeId  = openPeriod?._id;
-
-    // Tìm kỳ gần nhất mà LỚP NÀY cụ thể có sinh viên đăng ký (không phải kỳ đang mở)
-    const periodsWithRegs = await Registration.distinct('period', {
-      class: id,
-      ...(excludeId ? { period: { $ne: excludeId } } : {}),
-    });
-
+    const hasOpenReg = openPeriod && periodsWithRegs.some(p => p.toString() === openPeriod._id.toString());
     const gradingPeriod = periodsWithRegs.length
-      ? await Period.findOne({ _id: { $in: periodsWithRegs } }).sort({ endDate: -1 })
+      ? (hasOpenReg
+          ? openPeriod
+          : await Period.findOne({ _id: { $in: periodsWithRegs }, status: 'closed' }).sort({ endDate: -1 }))
       : null;
 
     // Lọc registration theo kỳ gần nhất của lớp này
@@ -235,7 +251,8 @@ exports.getClassStudents = async (req, res, next) => {
       ? { class: id, period: gradingPeriod._id }
       : { class: id };
     const regs = await Registration.find(periodFilter)
-      .populate('student', 'studentId fullName');
+      .populate('student', 'studentId fullName')
+      .populate('period', 'name status semester endDate');
 
     res.json(regs);
   } catch (err) {
@@ -264,15 +281,15 @@ exports.updateStudentGrades = async (req, res, next) => {
 
     const Period = require('../models/Period');
     const openPeriod = await Period.findOne({ status: 'open' });
-    const excludeId  = openPeriod?._id;
 
-    const periodsWithRegs = await Registration.distinct('period', {
-      class: id,
-      ...(excludeId ? { period: { $ne: excludeId } } : {}),
-    });
+    const periodsWithRegs = await Registration.distinct('period', { class: id });
 
+    // Ưu tiên kỳ đang MỞ nếu lớp có đăng ký trong kỳ đó
+    const hasOpenReg = openPeriod && periodsWithRegs.some(p => p.toString() === openPeriod._id.toString());
     const gradingPeriod = periodsWithRegs.length
-      ? await Period.findOne({ _id: { $in: periodsWithRegs } }).sort({ endDate: -1 })
+      ? (hasOpenReg
+          ? openPeriod
+          : await Period.findOne({ _id: { $in: periodsWithRegs }, status: 'closed' }).sort({ endDate: -1 }))
       : null;
 
     const periodFilter = gradingPeriod
@@ -282,14 +299,22 @@ exports.updateStudentGrades = async (req, res, next) => {
     const reg = await Registration.findOne(periodFilter);
     if (!reg) return res.status(404).json({ msg: 'Sinh viên chưa đăng ký lớp này' });
 
-    if (attendanceGrade !== undefined) reg.attendanceGrade = attendanceGrade;
-    if (midtermGrade !== undefined) reg.midtermGrade = midtermGrade;
-    if (finalGrade !== undefined) reg.finalGrade = finalGrade;
+    // Chỉ cho phép sửa điểm từ Học kỳ 2 (2026) trở đi (endDate > 31/12/2025)
+    if (!gradingPeriod || new Date(gradingPeriod.endDate) <= new Date('2025-12-31T23:59:59Z')) {
+      return res.status(403).json({ msg: 'Kỳ học này đã kết thúc và bị khóa. Không thể sửa điểm.' });
+    }
 
-    // Tính điểm tổng kết
+    // Làm tròn 1 chữ số thập phân cho từng cột điểm
+    const round1 = v => (v !== undefined && v !== null) ? Math.round(parseFloat(v) * 10) / 10 : v;
+    if (attendanceGrade !== undefined) reg.attendanceGrade = round1(attendanceGrade);
+    if (midtermGrade !== undefined)    reg.midtermGrade    = round1(midtermGrade);
+    if (finalGrade !== undefined)      reg.finalGrade      = round1(finalGrade);
+
+    // Tính điểm tổng kết (chỉ khi đã có đủ 3 điểm)
     if (reg.attendanceGrade !== null && reg.midtermGrade !== null && reg.finalGrade !== null) {
-      reg.totalGrade = (reg.attendanceGrade * 0.1) + (reg.midtermGrade * 0.3) + (reg.finalGrade * 0.6);
-      reg.totalGrade = Math.round(reg.totalGrade * 10) / 10; // Làm tròn 1 chữ số thập phân
+      reg.totalGrade = Math.round(
+        (reg.attendanceGrade * 0.1 + reg.midtermGrade * 0.3 + reg.finalGrade * 0.6) * 10
+      ) / 10;
     } else {
       reg.totalGrade = null;
     }
@@ -322,15 +347,14 @@ exports.getAIRisk = async (req, res, next) => {
     // Tương tự logic lấy danh sách sinh viên: Lọc đúng kỳ đang chấm điểm
     const Period = require('../models/Period');
     const openPeriod = await Period.findOne({ status: 'open' });
-    const excludeId  = openPeriod?._id;
 
-    const periodsWithRegs = await Registration.distinct('period', {
-      class: id,
-      ...(excludeId ? { period: { $ne: excludeId } } : {}),
-    });
+    const periodsWithRegs = await Registration.distinct('period', { class: id });
 
+    const hasOpenReg = openPeriod && periodsWithRegs.some(p => p.toString() === openPeriod._id.toString());
     const gradingPeriod = periodsWithRegs.length
-      ? await Period.findOne({ _id: { $in: periodsWithRegs } }).sort({ endDate: -1 })
+      ? (hasOpenReg
+          ? openPeriod
+          : await Period.findOne({ _id: { $in: periodsWithRegs }, status: 'closed' }).sort({ endDate: -1 }))
       : null;
 
     const periodFilter = gradingPeriod

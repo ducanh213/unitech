@@ -1,7 +1,7 @@
 // src/pages/student/Schedule.js
 // Chỉ hiển thị lớp thuộc đợt đăng ký ĐANG MỞ (status = open)
 import { useEffect, useState } from 'react';
-import { getRegistrations } from '../../api/axios';
+import { getRegistrations, getPeriods } from '../../api/axios';
 import { parseSchedule, DAYS, DAY_LABELS, PERIOD_TIMES } from '../../utils/scheduleParser';
 import '../../App.css';
 
@@ -17,19 +17,39 @@ export default function StudentSchedule() {
   const [loading, setLoading] = useState(true);
   const [periodName, setPeriodName] = useState('');
 
+  const [allRegs, setAllRegs] = useState([]);
+  const [periods, setPeriods] = useState([]);
+  const [selectedPeriodId, setSelectedPeriodId] = useState('');
+
   useEffect(() => {
-    getRegistrations()
-      .then(res => {
-        // Chỉ lấy registrations thuộc đợt ĐANG MỞ
-        const openRegs = res.data.filter(r => r.period?.status === 'open');
-        setRegs(openRegs);
-        if (openRegs.length > 0) {
-          setPeriodName(openRegs[0].period?.name || '');
+    Promise.all([getRegistrations(), getPeriods()])
+      .then(([regsRes, periodsRes]) => {
+        setAllRegs(regsRes.data);
+        const periodsData = periodsRes.data;
+        setPeriods(periodsData);
+        
+        // Mặc định chọn kỳ đang mở đăng ký hoặc kỳ hè, sau đó mới đến kỳ đang học
+        const isRegOpen = p => p.isRegistrationOpen || (p.name || '').toLowerCase().includes('hè') || (p.semester || '').includes('KH');
+        let defaultPeriod = periodsData.find(isRegOpen);
+        if (!defaultPeriod) defaultPeriod = periodsData.find(p => p.status === 'open');
+        if (!defaultPeriod && periodsData.length > 0) defaultPeriod = periodsData[0];
+        
+        if (defaultPeriod) {
+          setSelectedPeriodId(defaultPeriod._id);
         }
       })
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (selectedPeriodId) {
+      const filtered = allRegs.filter(r => r.period?._id === selectedPeriodId);
+      setRegs(filtered);
+      const selectedP = periods.find(p => p._id === selectedPeriodId);
+      setPeriodName(selectedP ? selectedP.name : '');
+    }
+  }, [selectedPeriodId, allRegs, periods]);
 
   if (loading) return (
     <div className="main-content-card" style={{ textAlign: 'center', padding: 60 }}>
@@ -81,12 +101,30 @@ export default function StudentSchedule() {
       )}
 
       <div className="main-content-card">
-        <h2 style={{ marginTop: 0, marginBottom: 4 }}>📅 Thời khóa biểu</h2>
-        {periodName && (
-          <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: 20 }}>
-            Hiển thị lịch học kỳ: <strong style={{ color: '#2563eb' }}>{periodName}</strong>
-          </p>
-        )}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <h2 style={{ marginTop: 0, marginBottom: 4 }}>📅 Thời khóa biểu</h2>
+            {periodName && (
+              <p style={{ color: '#64748b', fontSize: '0.85rem', margin: 0 }}>
+                Hiển thị lịch học kỳ: <strong style={{ color: '#2563eb' }}>{periodName}</strong>
+              </p>
+            )}
+          </div>
+          {periods.length > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <label style={{ fontWeight: 600, color: "#374151" }}>Chọn kỳ:</label>
+              <select
+                value={selectedPeriodId}
+                onChange={e => setSelectedPeriodId(e.target.value)}
+                style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: "0.9rem" }}
+              >
+                {periods.map(p => (
+                  <option key={p._id} value={p._id}>{p.name} ({p.semester})</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
 
         {regs.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 0', color: '#94a3b8' }}>

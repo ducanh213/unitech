@@ -68,44 +68,91 @@ class PathRequest(BaseModel):
 
 @app.post("/recommend-path")
 async def recommend_path(data: PathRequest):
-    # Cây môn học (Tech-tree) dựa trên 21 môn thực tế (Trung tâm)
+    # Cây tiên quyết đầy đủ theo đúng curriculum (môn -> các môn MỞ KHÓA sau khi qua)
     tech_tree = {
-        "WEB101": ["WEB102", "WEB201", "WEB202"],
-        "WEB102": ["WEB301"],
+        # General
+        "ENG101": ["ENG102"],
+        # WEB
+        "WEB101": ["WEB201"],
+        "WEB102": ["WEB202", "WEB203"],
+        "WEB103": ["WEB202", "WEB303"],
         "WEB201": ["WEB301"],
-        "DS101": ["DS102", "DS202"],
+        "WEB202": ["WEB302"],
+        "WEB203": ["WEB301", "WEB302"],
+        "WEB301": ["WEB402", "WEB403"],
+        "WEB302": ["WEB401", "WEB402", "WEB403"],
+        "WEB303": [],
+        "WEB401": [],
+        "WEB402": [],
+        "WEB403": [],
+        # DS
+        "DS101": ["DS201", "DS202"],
         "DS102": ["DS201"],
-        "DS201": ["DS301"],
-        "MOB101": ["MOB102"],
-        "MOB102": ["MOB201"],
-        "MOB201": ["MOB301"],
-        "DES101": ["DES102"],
+        "DS103": ["DS203", "DS303"],
+        "DS201": ["DS301", "DS302"],
+        "DS202": ["DS302"],
+        "DS203": ["DS303"],
+        "DS301": ["DS401", "DS402", "DS403"],
+        "DS302": ["DS403"],
+        "DS303": [],
+        "DS401": [],
+        "DS402": [],
+        "DS403": [],
+        # MOB
+        "MOB101": ["MOB201", "MOB202"],
+        "MOB102": [],
+        "MOB103": ["MOB301"],
+        "MOB201": ["MOB301", "MOB302"],
+        "MOB202": [],
+        "MOB203": ["MOB303"],
+        "MOB301": ["MOB401", "MOB402", "MOB403"],
+        "MOB302": ["MOB402", "MOB403"],
+        "MOB303": [],
+        "MOB401": [],
+        "MOB402": [],
+        "MOB403": [],
+        # DES
+        "DES101": ["DES201", "DES303", "DES401"],
         "DES102": ["DES201"],
-        "DES201": ["DES301"]
+        "DES103": ["DES202", "DES302"],
+        "DES201": ["DES301", "DES402", "DES403"],
+        "DES202": ["DES301"],
+        "DES203": [],
+        "DES301": ["DES402", "DES403"],
+        "DES302": ["DES403"],
+        "DES303": [],
+        "DES401": [],
+        "DES402": [],
+        "DES403": [],
     }
-    
+
     passed = set(data.passed_courses)
     failed = set(data.failed_courses)
-    recommendations = set()
-    
-    # 1. Ưu tiên gợi ý HỌC LẠI các môn rớt
+    retry_recs = []   # Môn cần học lại (trượt, chưa qua)
+    next_recs  = []   # Môn tiếp theo (đã qua tiên quyết)
+
+    # 1. Gợi ý HỌC LẠI các môn trượt (ưu tiên cao nhất)
     for c in failed:
         if c not in passed:
-            recommendations.add(c)
-    
+            retry_recs.append(c)
+
+    # 2. Gợi ý MÔN TIẾP THEO từ các môn đã qua
     for c in passed:
-        if c in tech_tree:
-            for next_c in tech_tree[c]:
-                if next_c not in passed:
-                    recommendations.add(next_c)
-                    
-    # Nếu chưa có môn nào cần học (cả học lại và lộ trình), gợi ý môn đại cương dùng chung cho tất cả các ngành
+        for next_c in tech_tree.get(c, []):
+            if next_c not in passed and next_c not in failed and next_c not in next_recs:
+                next_recs.append(next_c)
+
+    # Gộp: học lại trước, sau đó môn tiếp theo
+    recommendations = retry_recs + [r for r in next_recs if r not in retry_recs]
+
+    # Nếu không có gợi ý nào → gợi ý môn đại cương mở đầu
     if not recommendations:
-        if "ENG101" not in passed and "ENG101" not in failed: recommendations.add("ENG101")
-        if "PM101" not in passed and "PM101" not in failed: recommendations.add("PM101")
-        if "SOFT101" not in passed and "SOFT101" not in failed: recommendations.add("SOFT101")
-            
-    rec_list = list(recommendations)[:3] # Gợi ý tối đa 3 môn
+        for starter in ["ENG101", "WEB101", "DS101", "MOB101", "DES101"]:
+            if starter not in passed:
+                recommendations.append(starter)
+                break
+
+    rec_list = recommendations[:3]  # Gợi ý tối đa 3 môn
     return {"status": "success", "recommendations": rec_list}
 
 if __name__ == "__main__":
