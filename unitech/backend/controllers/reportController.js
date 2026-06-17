@@ -1,5 +1,5 @@
 // backend/controllers/reportController.js
-const Student      = require('../models/Student');
+const Student = require('../models/Student');
 const Registration = require('../models/Registration');
 
 /**
@@ -53,13 +53,13 @@ exports.getAcademicReport = async (req, res, next) => {
 
     // 3. Tính chỉ số từng sinh viên
     const studentStats = students.map(stu => {
-      const regs      = regsByStudent[stu._id.toString()] || [];
+      const regs = regsByStudent[stu._id.toString()] || [];
       const gradedRegs = regs.filter(r => r.totalGrade !== null && r.totalGrade !== undefined);
       const failedRegs = gradedRegs.filter(r => r.totalGrade < 4.0);
       const passedRegs = gradedRegs.filter(r => r.totalGrade >= 4.0);
 
-      const hasGrades  = gradedRegs.length > 0;
-      const gpa        = hasGrades
+      const hasGrades = gradedRegs.length > 0;
+      const gpa = hasGrades
         ? parseFloat((gradedRegs.reduce((s, r) => s + r.totalGrade, 0) / gradedRegs.length).toFixed(2))
         : 0;
       const failedCount = failedRegs.length;
@@ -67,19 +67,19 @@ exports.getAcademicReport = async (req, res, next) => {
 
       // Danh sách môn rớt (để Admin xem chi tiết)
       const failedCourses = failedRegs.map(r => ({
-        code:       r.class?.course?.code  || '?',
-        title:      r.class?.course?.title || '?',
+        code: r.class?.course?.code || '?',
+        title: r.class?.course?.title || '?',
         totalGrade: r.totalGrade
       }));
 
       const group = classifyStudent(gpa, failedCount, hasGrades);
 
       return {
-        _id:          stu._id,
-        studentId:    stu.studentId,
-        fullName:     stu.fullName,
-        major:        stu.major || 'Chưa phân ngành',
-        year:         stu.year,
+        _id: stu._id,
+        studentId: stu.studentId,
+        fullName: stu.fullName,
+        major: stu.major || 'Chưa phân ngành',
+        year: stu.year,
         gpa,
         failedCount,
         passedCount,
@@ -96,7 +96,7 @@ exports.getAcademicReport = async (req, res, next) => {
       if (!majorMap[key]) {
         majorMap[key] = {
           majorName: key,
-          students:  []
+          students: []
         };
       }
       majorMap[key].students.push(stu);
@@ -104,9 +104,9 @@ exports.getAcademicReport = async (req, res, next) => {
 
     // 5. Tính chỉ số chất lượng từng ngành
     const majorReports = Object.values(majorMap).map(m => {
-      const allStu       = m.students;
-      const withGrades   = allStu.filter(s => s.group !== 'no_data');
-      const atRisk       = allStu.filter(s => s.group === 'weak');
+      const allStu = m.students;
+      const withGrades = allStu.filter(s => s.group !== 'no_data');
+      const atRisk = allStu.filter(s => s.group === 'weak');
 
       const avgGpa = withGrades.length > 0
         ? parseFloat((withGrades.reduce((s, st) => s + st.gpa, 0) / withGrades.length).toFixed(2))
@@ -120,24 +120,24 @@ exports.getAcademicReport = async (req, res, next) => {
         : null;
 
       // Điểm sức khỏe ngành (0-100)
-      const atRiskRate   = allStu.length > 0 ? atRisk.length / allStu.length : 0;
-      const healthScore  = Math.round((1 - atRiskRate) * 100);
+      const atRiskRate = allStu.length > 0 ? atRisk.length / allStu.length : 0;
+      const healthScore = Math.round((1 - atRiskRate) * 100);
       const healthStatus = healthScore >= 80 ? 'good' : healthScore >= 60 ? 'warning' : 'critical';
 
       // Đếm theo nhóm
       const groupCounts = {
         excellent: allStu.filter(s => s.group === 'excellent').length,
-        good:      allStu.filter(s => s.group === 'good').length,
-        average:   allStu.filter(s => s.group === 'average').length,
-        weak:      allStu.filter(s => s.group === 'weak').length,
-        no_data:   allStu.filter(s => s.group === 'no_data').length,
+        good: allStu.filter(s => s.group === 'good').length,
+        average: allStu.filter(s => s.group === 'average').length,
+        weak: allStu.filter(s => s.group === 'weak').length,
+        no_data: allStu.filter(s => s.group === 'no_data').length,
       };
 
       // Trả về toàn bộ danh sách sinh viên của ngành để có thể view bất kỳ nhóm nào
       const studentsList = allStu.sort((a, b) => b.gpa - a.gpa);
 
       return {
-        majorName:     m.majorName,
+        majorName: m.majorName,
         totalStudents: allStu.length,
         avgGpa,
         passRate,
@@ -147,31 +147,31 @@ exports.getAcademicReport = async (req, res, next) => {
         studentsList,
       };
     })
-    // Sắp xếp ngành: critical trước, rồi warning, rồi good
-    .sort((a, b) => {
-      const order = { critical: 0, warning: 1, good: 2 };
-      return (order[a.healthStatus] ?? 3) - (order[b.healthStatus] ?? 3);
-    });
+      // Sắp xếp ngành: critical trước, rồi warning, rồi good
+      .sort((a, b) => {
+        const order = { critical: 0, warning: 1, good: 2 };
+        return (order[a.healthStatus] ?? 3) - (order[b.healthStatus] ?? 3);
+      });
 
     // 6. Tổng hợp toàn trường
     const totalStudents = studentStats.length;
     const allWithGrades = studentStats.filter(s => s.group !== 'no_data');
-    const overallGpa    = allWithGrades.length > 0
+    const overallGpa = allWithGrades.length > 0
       ? parseFloat((allWithGrades.reduce((s, st) => s + st.gpa, 0) / allWithGrades.length).toFixed(2))
       : 0;
-    const atRiskTotal   = studentStats.filter(s => s.group === 'weak').length;
-    const totalPassed   = studentStats.reduce((s, st) => s + st.passedCount, 0);
-    const totalFailed   = studentStats.reduce((s, st) => s + st.failedCount, 0);
+    const atRiskTotal = studentStats.filter(s => s.group === 'weak').length;
+    const totalPassed = studentStats.reduce((s, st) => s + st.passedCount, 0);
+    const totalFailed = studentStats.reduce((s, st) => s + st.failedCount, 0);
     const overallPassRate = (totalPassed + totalFailed) > 0
       ? parseFloat(((totalPassed / (totalPassed + totalFailed)) * 100).toFixed(1))
       : null;
 
     const overallGroupCounts = {
       excellent: studentStats.filter(s => s.group === 'excellent').length,
-      good:      studentStats.filter(s => s.group === 'good').length,
-      average:   studentStats.filter(s => s.group === 'average').length,
-      weak:      studentStats.filter(s => s.group === 'weak').length,
-      no_data:   studentStats.filter(s => s.group === 'no_data').length,
+      good: studentStats.filter(s => s.group === 'good').length,
+      average: studentStats.filter(s => s.group === 'average').length,
+      weak: studentStats.filter(s => s.group === 'weak').length,
+      no_data: studentStats.filter(s => s.group === 'no_data').length,
     };
 
     res.json({

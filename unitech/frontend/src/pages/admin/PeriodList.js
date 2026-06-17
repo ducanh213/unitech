@@ -5,9 +5,9 @@ import { getPeriods, deletePeriod, openPeriod, closePeriod } from '../../api/axi
 import '../../App.css';
 
 const STATUS_CONFIG = {
-  pending: { label: '⏳ Chờ mở',   bg: '#fef9c3', color: '#854d0e', border: '#fde047' },
-  open:    { label: '🟢 Đang mở',  bg: '#dcfce7', color: '#15803d', border: '#86efac' },
-  closed:  { label: '🔒 Đã đóng',  bg: '#f1f5f9', color: '#64748b', border: '#cbd5e1' },
+  pending: { label: '⏳ Chờ mở', bg: '#fef9c3', color: '#854d0e', border: '#fde047' },
+  open: { label: '🟢 Đang mở', bg: '#dcfce7', color: '#15803d', border: '#86efac' },
+  closed: { label: '🔒 Đã đóng', bg: '#f1f5f9', color: '#64748b', border: '#cbd5e1' },
 };
 
 export default function PeriodList() {
@@ -74,9 +74,9 @@ export default function PeriodList() {
     </div>
   );
 
-  const openCount    = periods.filter(p => p.status === 'open').length;
+  const openCount = periods.filter(p => p.status === 'open').length;
   const pendingCount = periods.filter(p => p.status === 'pending').length;
-  const closedCount  = periods.filter(p => p.status === 'closed').length;
+  const closedCount = periods.filter(p => p.status === 'closed').length;
 
   return (
     <div>
@@ -170,12 +170,12 @@ export default function PeriodList() {
                           <button
                             onClick={() => p.status === 'open' ? handleClose(p._id) : handleOpen(p._id)}
                             disabled={isActing}
-                            style={{ 
+                            style={{
                               display: 'flex', alignItems: 'center', gap: 8,
-                              background: p.status === 'open' ? '#16a34a' : '#cbd5e1', 
-                              color: p.status === 'open' ? '#fff' : '#475569', 
-                              border: 'none', borderRadius: 20, 
-                              padding: '4px 12px 4px 6px', cursor: 'pointer', 
+                              background: p.status === 'open' ? '#16a34a' : '#cbd5e1',
+                              color: p.status === 'open' ? '#fff' : '#475569',
+                              border: 'none', borderRadius: 20,
+                              padding: '4px 12px 4px 6px', cursor: 'pointer',
                               fontWeight: 600, fontSize: '0.82rem',
                               transition: 'all 0.3s'
                             }}

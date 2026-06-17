@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
-const jwt    = require('jsonwebtoken');
-const User   = require('../models/User');
-const Student= require('../models/Student');
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const Student = require('../models/Student');
 const { sendOTP } = require('../utils/email');
 require('dotenv').config();
 
@@ -25,9 +25,9 @@ exports.register = async (req, res, next) => {
     });
 
     await Student.create({
-      user:      user._id,
+      user: user._id,
       studentId: extra,
-      fullName:  username,
+      fullName: username,
       phone,
       address
     });
@@ -41,17 +41,17 @@ exports.register = async (req, res, next) => {
 
 // POST /api/auth/login
 exports.login = async (req, res, next) => {
-  try { 
+  try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ msg: 'Sai email hoặc mật khẩu' });
+    if (!user) return res.status(400).json({ msg: 'Sai email   hoặc mật khẩu' });
 
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(400).json({ msg: 'Sai email hoặc mật khẩu' });
 
     const token = jwt.sign(
-      { 
-        id: user._id, 
+      {
+        id: user._id,
         role: user.role,
         username: user.username,
         email: user.email
@@ -71,8 +71,13 @@ exports.forgot = async (req, res, next) => {
     const { email } = req.body;
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ msg: 'Email không tồn tại' });
-    const otp = Math.floor(100000 + Math.random()*900000).toString();
-    // TODO: lưu OTP vào DB hoặc cache để verify
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Lưu OTP vào DB với hạn sử dụng 3 phút
+    user.resetOtp = otp;
+    user.resetOtpExpires = Date.now() + 3 * 60 * 1000;
+    await user.save();
+
     await sendOTP(email, otp);
     res.json({ msg: 'OTP đã được gửi' });
   } catch (err) {
@@ -84,9 +89,25 @@ exports.forgot = async (req, res, next) => {
 exports.reset = async (req, res, next) => {
   try {
     const { email, otp, newPassword } = req.body;
-    // TODO: kiểm tra OTP
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ msg: 'Email không tồn tại' });
+
+    // Kiểm tra OTP
+    if (user.resetOtp !== otp) {
+      return res.status(400).json({ msg: 'Mã OTP không hợp lệ' });
+    }
+    if (user.resetOtpExpires < Date.now()) {
+      return res.status(400).json({ msg: 'Mã OTP đã hết hạn' });
+    }
+
     const hashed = await bcrypt.hash(newPassword, 10);
-    await User.findOneAndUpdate({ email }, { password: hashed });
+    user.password = hashed;
+    // Xóa OTP sau khi đổi pass thành công
+    user.resetOtp = undefined;
+    user.resetOtpExpires = undefined;
+    await user.save();
+
     res.json({ msg: 'Đổi mật khẩu thành công' });
   } catch (err) {
     next(err);
@@ -102,10 +123,10 @@ exports.updateMe = async (req, res, next) => {
     }
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ msg: 'Không tìm thấy tài khoản' });
-    
+
     user.username = username.trim();
     await user.save();
-    
+
     res.json({ msg: 'Cập nhật thông tin thành công', user: { username: user.username, email: user.email, role: user.role } });
   } catch (err) {
     next(err);

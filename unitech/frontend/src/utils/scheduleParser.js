@@ -32,7 +32,7 @@ function timeToPeriods(startH, startM, endH, endM) {
   const s = startH * 60 + startM;
   const e = endH   * 60 + endM;
   return PERIOD_TIMES
-    .filter(p => s < p.e + 10 && e > p.s - 10)   // 10 phút tolerance
+    .filter(p => s < p.e && e > p.s)               // strict overlap, không tolerance
     .map(p => p.no);
 }
 
@@ -60,7 +60,7 @@ export function parseSchedule(schedStr) {
     const dayPart = mOld[1];
     const periods = timeToPeriods(+mOld[2], +mOld[3], +mOld[4], +mOld[5]);
     // Tách các ngày (phân cách bằng / hoặc ,)
-    const rawDays = dayPart.split(/[/,]/).map(d => d.trim().toLowerCase());
+    const rawDays = dayPart.split(/[/,]/).map(d => d.replace(':', '').trim().toLowerCase());
     for (const rd of rawDays) {
       const key = VI_TO_KEY[rd] || (rd.toUpperCase().startsWith('T') ? rd.toUpperCase() : null);
       if (key) result[key] = periods;

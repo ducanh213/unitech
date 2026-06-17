@@ -1,0 +1,68 @@
+KỊCH BẢN THUYẾT TRÌNH VÀ DEMO ĐỒ ÁN TỐT NGHIỆP: UNITECH
+
+======================================================================
+PHẦN 1: GIỚI THIỆU & ĐẶT VẤN ĐỀ
+======================================================================
+Kính chào quý thầy cô trong hội đồng đánh giá và các bạn sinh viên đang có mặt trong buổi bảo vệ đồ án ngày hôm nay. 
+Em tên là [Tên của bạn], và hôm nay nhóm em rất vinh dự được trình bày về đồ án tốt nghiệp với đề tài: "UniTech - Hệ thống Quản lý Đào tạo và Hỗ trợ Học vụ Thông minh".
+
+Trong quá trình tìm hiểu thực tế tại các trường đại học, nhóm em nhận thấy công tác quản lý đào tạo đang gặp phải một số thách thức:
+1. Đăng ký tín chỉ khó khăn, sinh viên dễ bị nhầm lẫn giữa môn học trước, môn tiên quyết, hoặc không biết nên ưu tiên học lại môn nào.
+2. Thiếu một hệ thống cảnh báo sớm giúp nhà trường phát hiện kịp thời các sinh viên có nguy cơ học vụ.
+3. Bài toán muôn thuở: "Sập web" hoặc nghẽn mạng trong những ngày đầu đăng ký tín chỉ do lượng sinh viên truy cập quá lớn.
+
+Từ những vấn đề đó, em đã phát triển hệ thống UniTech nhằm số hóa, thông minh hóa và tối ưu hóa hệ thống đào tạo.
+
+======================================================================
+PHẦN 2: KIẾN TRÚC CÔNG NGHỆ, LƯU TRỮ VÀ TỐC ĐỘ (CHỊU TẢI)
+======================================================================
+Để giải quyết bài toán cốt lõi về tốc độ và lưu lượng, nhóm em đã lựa chọn một kiến trúc hệ thống hiện đại, sẵn sàng cho môi trường thực tế (Production):
+
+1. Ngôn ngữ & Nền tảng:
+- Dự án được xây dựng toàn bộ trên hệ sinh thái JavaScript (MERN Stack). 
+- Frontend dùng React.js giúp tải trang siêu mượt (Single Page Application) mà không cần load lại toàn bộ web.
+- Đặc biệt, Backend sử dụng Node.js với cơ chế xử lý bất đồng bộ (Non-blocking I/O). Nhờ cơ chế này, thay vì xử lý tuần tự từng người, máy chủ có thể tiếp nhận hàng nghìn yêu cầu đăng ký tín chỉ cùng một lúc (concurrent requests) mà không bị "nghẽn luồng" hay sập server.
+
+2. Lưu trữ (Database) và Phân tích Học vụ:
+- Hệ thống sử dụng cơ sở dữ liệu MongoDB (NoSQL) triển khai trên đám mây (Cloud Database).
+- Ở môi trường Demo (Gói miễn phí): Dữ liệu JSON của MongoDB được tối ưu cực kỳ nhẹ (chỉ khoảng 1-2 KB/sinh viên). Dù chỉ dùng gói 512MB miễn phí, hệ thống vẫn có thể lưu trữ dư sức hồ sơ của hơn 100.000 sinh viên. Tuy nhiên, gói Demo này bị giới hạn về băng thông mạng, chỉ cho phép khoảng 500 kết nối đồng thời.
+- Nếu triển khai thực tế (Production): Hệ thống có khả năng "Mở rộng ngang" (Horizontal Scaling) vô cùng dễ dàng. Chỉ cần nâng cấp lên gói Cloud phù hợp (như M10), kết hợp với hiệu năng của Node.js, hệ thống có thể chịu tải mượt mà từ 3.000 đến 5.000 lượt truy cập đồng thời (CCU) – hoàn toàn đáp ứng được bài toán của trường học.
+
+Hơn thế nữa, em đã tự phát triển một hệ chuyên gia (Rule-based Expert System) chạy trực tiếp trên Node.js để phân tích điểm số và đưa ra cảnh báo. Nó xử lý logic nội bộ mà không cần gọi sang các service AI bên ngoài (như Python), giúp loại bỏ độ trễ mạng (Network latency), mang lại tốc độ phản hồi tính bằng mili-giây.
+
+======================================================================
+PHẦN 3: KỊCH BẢN DEMO THỰC TẾ (LUỒNG: ADMIN -> TEACHER -> STUDENT)
+======================================================================
+Và sau đây, nhóm em xin phép được demo trực tiếp cách hệ thống vận hành trơn tru giữa 3 vai trò: Admin, Giảng viên và Sinh viên.
+
+[1. Vai Trò ADMIN]
+[Bạn của bạn thao tác]: Đăng nhập tài khoản Admin -> Vào trang Admin Dashboard -> Bấm nút "🤖 Dự báo AI" (Phân tích học vụ).
+[Bạn nói]:
+"Đầu tiên là Admin, người quản lý tổng quan. Trách nhiệm lớn nhất của Admin là theo dõi sức khỏe học tập toàn trường. Khi bạn em bấm vào phần Phân tích Học vụ, thuật toán lập tức quét toàn bộ điểm số, tìm ra những sinh viên đang ở mức 'Cảnh báo nguy hiểm' để phòng đào tạo xử lý. Admin cũng sẽ quản lý mở lớp và tạo các học kỳ mới."
+
+[2. Vai Trò TEACHER]
+[Bạn nói]: "Tiếp theo, để hệ thống có dữ liệu phân tích, chúng ta sẽ xem xét vai trò của Giảng viên nhập điểm."
+[Bạn của bạn thao tác]: Đăng xuất Admin -> Đăng nhập Teacher9 -> Vào lớp môn C++ -> Cho Sinh viên 2 điểm tạch (dưới 4) -> Lưu điểm. Tiếp tục vào lớp của Sinh viên 131, sửa 1 môn thành điểm rớt -> Lưu.
+[Bạn nói]:
+"Giảng viên Teacher9 vừa tiến hành nhập điểm môn C++, đánh trượt Sinh viên số 2. Cùng lúc đó, giảng viên này cũng sửa đổi điểm của Sinh viên số 131 (từ qua môn thành trượt môn do hậu kiểm điểm). Tất cả dữ liệu này được đẩy ngay lập tức lên cơ sở dữ liệu."
+
+[3. Vai Trò STUDENT]
+[Bạn nói]: "Cuối cùng, hệ thống sẽ tự động điều chỉnh lộ trình cho sinh viên ra sao dựa trên các điểm số vừa rồi? Mời hội đồng xem 3 trường hợp của sinh viên."
+
+-- Tình huống 1: Nhạy bén với thay đổi điểm (Sinh viên 131) --
+[Bạn của bạn thao tác]: Đăng nhập SV 131 -> Vào Tiến độ học tập / Gợi ý đăng ký.
+[Bạn nói]: "Đầu tiên là Sinh viên 131. Vốn dĩ sinh viên này đã học đủ 14/14 môn và hiển thị 'Hoàn thành chương trình'. Nhưng do Teacher vừa cập nhật lại điểm thành trượt, thuật toán của UniTech ngay lập tức hủy trạng thái hoàn thành và bắt buộc sinh viên này phải đăng ký học lại môn đó. Giao diện thay đổi theo thời gian thực."
+
+-- Tình huống 2: Ưu tiên trả nợ môn (Sinh viên 2) --
+[Bạn của bạn thao tác]: Đăng xuất -> Đăng nhập SV 2 -> Vào trang Gợi ý đăng ký.
+[Bạn nói]: "Thứ hai là Sinh viên số 2, đang học bình thường. Vì vừa bị Teacher9 đánh trượt môn C++, hệ thống ngay lập tức đổi chiến lược: tạm dừng gợi ý các môn mới, mà đẩy môn C++ lên vị trí đầu tiên yêu cầu học lại để đảm bảo không bị nợ đọng môn."
+
+-- Tình huống 3: Tương tác xử lý lớp đầy (Sinh viên 132 & Admin) --
+[Bạn của bạn thao tác]: Đăng xuất -> Đăng nhập SV 132 -> Bấm đăng ký môn Web (Kỳ hè) -> Hiện lỗi Lớp đầy.
+[Bạn nói]: "Cuối cùng, Sinh viên 132 đã xong 13 môn, chỉ thiếu môn Web. Bạn ấy cố đăng ký trong Kỳ hè nhưng lớp đã báo đầy. Thay vì phải làm đơn giấy tốn thời gian..."
+[Bạn của bạn thao tác]: (Qua tab ẩn danh) Đăng nhập Admin -> Quản lý lớp -> Tăng số lượng tối đa của lớp Web -> Lưu.
+[Bạn nói]: "Lúc này, Admin có thể dễ dàng can thiệp, tăng sĩ số tối đa của lớp môn Web lên."
+[Bạn của bạn thao tác]: Quay lại màn hình Sinh viên 132 -> Bấm đăng ký lại -> Báo thành công.
+[Bạn nói]: "Và ngay khi Admin lưu, Sinh viên 132 tải lại trang và đã có thể đăng ký thành công môn học cuối cùng.
+
+Qua phần trình bày vừa rồi, nhóm em hy vọng đã làm nổi bật được khả năng đồng bộ dữ liệu chặt chẽ và tính thực tiễn cao của đồ án UniTech. Em xin kết thúc phần thuyết trình tại đây, cảm ơn quý thầy cô đã lắng nghe!"

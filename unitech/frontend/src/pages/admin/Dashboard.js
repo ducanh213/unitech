@@ -34,7 +34,7 @@ export default function AdminDashboard() {
             <li><NavLink to="courses" className={({ isActive }) => isActive ? 'active' : ''}>📖 Học phần</NavLink></li>
             <li><NavLink to="classes" className={({ isActive }) => isActive ? 'active' : ''}>🏫 Lớp học</NavLink></li>
             <li><NavLink to="periods" className={({ isActive }) => isActive ? 'active' : ''}>⏱️ Đợt đăng ký</NavLink></li>
-            <li><NavLink to="report"  className={({ isActive }) => isActive ? 'active' : ''}>📊 Báo cáo AI</NavLink></li>
+            <li><NavLink to="report" className={({ isActive }) => isActive ? 'active' : ''}>📊 Báo cáo AI</NavLink></li>
             <li><NavLink to="profile" className={({ isActive }) => isActive ? 'active' : ''}>👤 Tài khoản</NavLink></li>
           </ul>
         </nav>

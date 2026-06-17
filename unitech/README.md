@@ -89,3 +89,10 @@ python main.py
 ```
 
 Sau khi Server Python chạy thành công ở cổng `8080`, bạn có thể vào trang **Admin Dashboard -> Quản lý Học phần** và bấm nút **🤖 Dự báo AI** để xem kết quả phân tích.
+
+// hiện tại chương trìhh học của 1 sinh viên là 14 môn, trong đó có 2 môn tiếng anh
+Demo, demo sinh viên 132, đã xong 13 môn, còn thiếu 1 môn wed, có thể đăng ký trong kỳ hè, lớp đã full, cần xin admin mở thêm lớp 
+ // sinh viên 131 hoàn thành hết chương trình, sẽ hiện hoàn thành chương trình đào tạo, nếu đánh trượt 1 môn, sẽ gợi ý học lại môn đó 
+ // demo sinh viên 2, qua hết các môn, gợi ý học tiếp, nhưng nếu teacher9 cho tạch c++ gợi ý học lại môn đó
+
+🚕🚕🚕🚓

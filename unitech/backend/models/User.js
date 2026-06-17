@@ -9,6 +9,8 @@ const UserSchema = new mongoose.Schema({
     enum: ['student','teacher','admin'],
     default: 'student'                                      //mặc định quyền sinh viên
   },
+  resetOtp: { type: String },                                  // OTP reset mật khẩu
+  resetOtpExpires: { type: Date },                             // Thời hạn OTP
   createdAt: { type: Date, default: Date.now }               // ngày tạo tài khoản
 });
 

@@ -8,7 +8,7 @@ export default function Grades() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedSemester, setSelectedSemester] = useState('all');
-  
+
   // AI Path States
   const [recommendations, setRecommendations] = useState([]);
   const [analyzing, setAnalyzing] = useState(false);
@@ -138,7 +138,7 @@ export default function Grades() {
             <h3 style={{ margin: 0, color: '#334155' }}>🤖 Gợi ý Lộ trình Học tập (AI)</h3>
             <p style={{ margin: '8px 0 0', color: '#64748b' }}>Hệ thống tự động phân tích lịch sử điểm số để đề xuất môn học tiếp theo.</p>
           </div>
-          <button 
+          <button
             onClick={handleAnalyzePath}
             disabled={analyzing}
             style={{
@@ -295,9 +295,9 @@ export default function Grades() {
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                             <span style={{ color: '#cbd5e1' }}>—</span>
                             {reg.attendanceGrade !== null && reg.midtermGrade !== null && (
-                              <span style={{ 
-                                fontSize: '0.75rem', 
-                                color: '#f59e0b', 
+                              <span style={{
+                                fontSize: '0.75rem',
+                                color: '#f59e0b',
                                 marginTop: '4px',
                                 fontWeight: 500,
                                 background: '#fef3c7',

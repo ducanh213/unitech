@@ -34,6 +34,15 @@ Hệ thống tuân thủ **Nguyên tắc Vàng**: Frontend không chạm trực 
 - **Quy trình chuẩn:** Frontend gửi lệnh ➡️ Backend (`server.js` đón nhận) ➡️ Controllers (Xác thực và phân tích lệnh) ➡️ MongoDB (Thực thi Lưu/Xóa dữ liệu).
 - **Lợi ích:** Đảm bảo an toàn tuyệt đối. Hacker không thể dùng F12 trên trình duyệt để xóa dữ liệu vì mọi quyền sinh sát đều nằm ở Backend Server.
 
+### "Bộ não" của hệ thống: 9 File Controllers
+Toàn bộ logic nghiệp vụ (Business Logic) cốt lõi nhất của dự án được chia đều vào 9 file Controller. Khi hội đồng hỏi về luồng xử lý phức tạp nhất, trọng tâm rơi vào 4 Controller cốt cán sau:
+1. **`registrationController.js` (Đăng ký học phần):** Chứa thuật toán chống đăng ký trùng tiết học (Overlap Schedule), kiểm tra sức chứa lớp (Capacity), và xác thực môn tiên quyết (Prerequisites).
+2. **`classController.js` (Quản lý Lớp & Chấm điểm):** Tự động nhận diện kỳ học đang mở để cho phép giảng viên nhập điểm. Chứa hàm `getAIRisk` để gọi sang Server Python dự báo sinh viên có nguy cơ trượt môn.
+3. **`studentController.js` (Quản lý Sinh viên):** Quét lịch sử điểm để nhận diện sinh viên đã đủ điều kiện Tốt nghiệp. Chứa hàm `getAIPath` gọi sang hệ thống AI gợi ý lộ trình học kế tiếp.
+4. **`reportController.js` (Báo cáo Thống kê):** Chứa hệ Rule-based AI (Hệ chuyên gia). Tự động quyét hàng ngàn bản ghi để tính GPA trung bình và phân loại học lực rủi ro (Giỏi, Khá, TB, Yếu) hoàn toàn độc lập không cần Python.
+
+*(5 Controller còn lại: `authController`, `courseController`, `majorController`, `periodController`, `teacherController` đảm nhiệm các thao tác CRUD cơ bản và xác thực hệ thống).*
+
 ---
 
 ## PHẦN 3: KIẾN TRÚC TRÍ TUỆ NHÂN TẠO (100% EXPERT SYSTEM / RULE-BASED AI)

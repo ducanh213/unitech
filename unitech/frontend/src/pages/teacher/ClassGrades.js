@@ -59,8 +59,8 @@ export default function ClassGrades() {
     setMsg('');
     setEditForm({
       attendanceGrade: reg.attendanceGrade !== null ? reg.attendanceGrade : '',
-      midtermGrade:   reg.midtermGrade   !== null ? reg.midtermGrade   : '',
-      finalGrade:     reg.finalGrade     !== null ? reg.finalGrade     : '',
+      midtermGrade: reg.midtermGrade !== null ? reg.midtermGrade : '',
+      finalGrade: reg.finalGrade !== null ? reg.finalGrade : '',
     });
   };
 
@@ -71,8 +71,8 @@ export default function ClassGrades() {
       setSaving(true);
       const payload = {
         attendanceGrade: editForm.attendanceGrade !== '' ? Number(editForm.attendanceGrade) : null,
-        midtermGrade:   editForm.midtermGrade   !== '' ? Number(editForm.midtermGrade)   : null,
-        finalGrade:     editForm.finalGrade     !== '' ? Number(editForm.finalGrade)     : null,
+        midtermGrade: editForm.midtermGrade !== '' ? Number(editForm.midtermGrade) : null,
+        finalGrade: editForm.finalGrade !== '' ? Number(editForm.finalGrade) : null,
       };
       await updateStudentGrades(classId, studentId, payload);
       setEditingId(null);
@@ -107,7 +107,7 @@ export default function ClassGrades() {
   const gradedCount = students.filter(s => s.totalGrade !== null).length;
   // Kiểm tra kỳ hiện tại có được phép sửa điểm không (Học kỳ 2 2026 trở đi)
   const currentPeriod = students[0]?.period;
-  const isOpenPeriod  = currentPeriod ? new Date(currentPeriod.endDate) > new Date('2025-12-31T23:59:59Z') : false;
+  const isOpenPeriod = currentPeriod ? new Date(currentPeriod.endDate) > new Date('2025-12-31T23:59:59Z') : false;
 
   return (
     <div>
@@ -130,8 +130,8 @@ export default function ClassGrades() {
             : 'Đang tải...'}
         </h2>
         <div style={{ marginLeft: 'auto' }}>
-          <button 
-            onClick={handleAnalyzeRisk} 
+          <button
+            onClick={handleAnalyzeRisk}
             disabled={analyzing}
             style={{
               background: '#8b5cf6', color: 'white', border: 'none',
@@ -148,7 +148,7 @@ export default function ClassGrades() {
         <div style={{
           padding: '10px 16px', borderRadius: 10, marginBottom: 16,
           background: msg.startsWith('✅') ? '#f0fdf4' : '#fef2f2',
-          color:      msg.startsWith('✅') ? '#16a34a' : '#dc2626',
+          color: msg.startsWith('✅') ? '#16a34a' : '#dc2626',
           border: `1px solid ${msg.startsWith('✅') ? '#86efac' : '#fca5a5'}`,
           fontWeight: 600,
         }}>
@@ -271,18 +271,18 @@ export default function ClassGrades() {
                           reg.finalGrade !== null
                             ? <span style={{ color: '#475569' }}>{reg.finalGrade}</span>
                             : <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <span style={{ color: '#cbd5e1' }}>—</span>
-                                {reg.attendanceGrade !== null && reg.midtermGrade !== null && (
-                                  <span style={{ 
-                                    fontSize: '0.7rem', 
-                                    color: '#f59e0b', 
-                                    marginTop: '2px',
-                                    fontWeight: 500
-                                  }}>
-                                    Mục tiêu: {Math.max(0, Math.ceil((4.0 - (reg.attendanceGrade * 0.1) - (reg.midtermGrade * 0.3)) / 0.6 * 10) / 10)}
-                                  </span>
-                                )}
-                              </div>
+                              <span style={{ color: '#cbd5e1' }}>—</span>
+                              {reg.attendanceGrade !== null && reg.midtermGrade !== null && (
+                                <span style={{
+                                  fontSize: '0.7rem',
+                                  color: '#f59e0b',
+                                  marginTop: '2px',
+                                  fontWeight: 500
+                                }}>
+                                  Mục tiêu: {Math.max(0, Math.ceil((4.0 - (reg.attendanceGrade * 0.1) - (reg.midtermGrade * 0.3)) / 0.6 * 10) / 10)}
+                                </span>
+                              )}
+                            </div>
                         )}
                       </td>
 
@@ -330,7 +330,7 @@ export default function ClassGrades() {
                             if (ai.risk_level.includes('An toàn')) badgeColor = '#22c55e';
                             return (
                               <span style={{
-                                color: badgeColor, border: `1px solid ${badgeColor}`, 
+                                color: badgeColor, border: `1px solid ${badgeColor}`,
                                 padding: '2px 8px', borderRadius: 12, fontSize: '0.8rem', fontWeight: 600
                               }}>
                                 {ai.risk_level}

@@ -1,22 +1,22 @@
 // backend/controllers/registrationController.js
 const Registration = require("../models/Registration");
-const ClassModel   = require("../models/Class");
-const Period       = require("../models/Period");
-const Student      = require("../models/Student");
-const Course       = require("../models/Course");
+const ClassModel = require("../models/Class");
+const Period = require("../models/Period");
+const Student = require("../models/Student");
+const Course = require("../models/Course");
 
 // Tiết học (phút từ 0:00)
 const PERIOD_TIMES = [
-  { no: 1,  s: 7*60+0,   e: 7*60+50  },
-  { no: 2,  s: 7*60+55,  e: 8*60+45  },
-  { no: 3,  s: 8*60+50,  e: 9*60+40  },
-  { no: 4,  s: 9*60+50,  e: 10*60+40 },
-  { no: 5,  s: 10*60+45, e: 11*60+35 },
-  { no: 6,  s: 12*60+30, e: 13*60+20 },
-  { no: 7,  s: 13*60+25, e: 14*60+15 },
-  { no: 8,  s: 14*60+20, e: 15*60+10 },
-  { no: 9,  s: 15*60+20, e: 16*60+10 },
-  { no: 10, s: 16*60+15, e: 17*60+5  },
+  { no: 1, s: 7 * 60 + 0, e: 7 * 60 + 50 },
+  { no: 2, s: 7 * 60 + 55, e: 8 * 60 + 45 },
+  { no: 3, s: 8 * 60 + 50, e: 9 * 60 + 40 },
+  { no: 4, s: 9 * 60 + 50, e: 10 * 60 + 40 },
+  { no: 5, s: 10 * 60 + 45, e: 11 * 60 + 35 },
+  { no: 6, s: 12 * 60 + 30, e: 13 * 60 + 20 },
+  { no: 7, s: 13 * 60 + 25, e: 14 * 60 + 15 },
+  { no: 8, s: 14 * 60 + 20, e: 15 * 60 + 10 },
+  { no: 9, s: 15 * 60 + 20, e: 16 * 60 + 10 },
+  { no: 10, s: 16 * 60 + 15, e: 17 * 60 + 5 },
 ];
 
 // Parse "T2,T4 07:00-11:35" → { T2: Set{1,2,3,4,5}, T4: Set{1,2,3,4,5} }
@@ -25,9 +25,9 @@ function parseScheduleToSlots(schedStr) {
   const result = {};
   const m = schedStr.match(/^((?:T[2-7],?)+)\s+(\d+):(\d+)\s*[-–]\s*(\d+):(\d+)$/i);
   if (!m) return {};
-  const days    = m[1].toUpperCase().split(',').map(d => d.trim());
-  const sMin    = parseInt(m[2]) * 60 + parseInt(m[3]);
-  const eMin    = parseInt(m[4]) * 60 + parseInt(m[5]);
+  const days = m[1].toUpperCase().split(',').map(d => d.trim());
+  const sMin = parseInt(m[2]) * 60 + parseInt(m[3]);
+  const eMin = parseInt(m[4]) * 60 + parseInt(m[5]);
   const periods = new Set(
     PERIOD_TIMES.filter(p => sMin < p.e + 10 && eMin > p.s - 10).map(p => p.no)
   );
@@ -98,7 +98,7 @@ exports.create = async (req, res, next) => {
     // 5) Kiểm tra sĩ số lớp (capacityMax)
     const currentEnrollment = await Registration.countDocuments({ class: classId });
     if (currentEnrollment >= cls.capacityMax) {
-      return res.status(400).json({ msg: `Lớp ${cls.classCode} đã đầy (${currentEnrollment}/${cls.capacityMax} chỗ)` });
+      return res.status(400).json({ msg: `Lớp ${cls.classCode} đã đầy  (${currentEnrollment}/${cls.capacityMax} chỗ)` });
     }
 
     // 6) Lấy lịch sử học tập của sinh viên (tất cả đăng ký đã có điểm tổng kết)

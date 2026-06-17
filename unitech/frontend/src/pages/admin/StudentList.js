@@ -36,7 +36,7 @@ export default function StudentList() {
   if (loading) return <p>Đang tải...</p>;
   return (
     <div>
-      <h2>Quản lý Sinh viên</h2>
+      <h2>Quản lý sinh viên</h2>
       <button onClick={() => navigate('new')}>Thêm sinh viên</button>
       <table border="1" cellPadding="5" style={{ marginTop: 10 }}>
         <thead>

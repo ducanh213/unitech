@@ -624,7 +624,7 @@
 .admin-container {
   display: flex;
   height: 100vh;
-  background: var(--bg-light);
+  background: pink;
 }
 
 .sidebar {
